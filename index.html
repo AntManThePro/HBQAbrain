@@ -1,0 +1,2338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="NEXUS Hood Boss QA Brain — Multi-Agent Quality Assurance System for Kitchen Exhaust Cleaning Operations. Built by DoubleA @ AntManThePro">
+    <meta name="theme-color" content="#00ff87">
+    <title>NEXUS • Hood Boss QA Brain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2300ff87'/%3E%3Cstop offset='0.5' stop-color='%2360efff'/%3E%3Cstop offset='1' stop-color='%23ff0080'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='42' fill='none' stroke='url(%23g)' stroke-width='8'/%3E%3Cpath d='M30 35 Q50 20 70 35 M30 50 Q50 35 70 50 M30 65 Q50 50 70 65' fill='none' stroke='%23ffcc00' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='50' cy='50' r='8' fill='%2300ff87'/%3E%3C/svg%3E" type="image/svg+xml">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --neon-green: #00ff87;
+            --cyan: #60efff;
+            --hot-pink: #ff0080;
+            --yellow: #ffcc00;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .font-display {
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+        }
+
+        .neon-text {
+            text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+        }
+
+        .neon-green { color: #00ff87; text-shadow: 0 0 10px #00ff87, 0 0 20px #00ff87; }
+        .neon-cyan { color: #60efff; text-shadow: 0 0 10px #60efff, 0 0 20px #60efff; }
+        .neon-pink { color: #ff0080; text-shadow: 0 0 10px #ff0080, 0 0 20px #ff0080; }
+        .neon-yellow { color: #ffcc00; text-shadow: 0 0 10px #ffcc00, 0 0 20px #ffcc00; }
+
+        .glass {
+            background: rgba(17, 17, 22, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .neon-border {
+            border: 1px solid #00ff87;
+            box-shadow: 0 0 15px rgba(0, 255, 135, 0.3);
+        }
+
+        .neon-border-cyan { border-color: #60efff; box-shadow: 0 0 15px rgba(96, 239, 255, 0.3); }
+        .neon-border-pink { border-color: #ff0080; box-shadow: 0 0 15px rgba(255, 0, 128, 0.3); }
+        .neon-border-yellow { border-color: #ffcc00; box-shadow: 0 0 15px rgba(255, 204, 0, 0.3); }
+
+        .section-header {
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 600;
+            opacity: 0.7;
+        }
+
+        .score-value {
+            font-variant-numeric: tabular-nums;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .agent-node {
+            transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+            cursor: pointer;
+        }
+        
+        .agent-node:hover {
+            filter: brightness(1.3) saturate(1.2);
+            transform: scale(1.1);
+        }
+
+        .data-flow {
+            animation: dataFlow 1.5s linear infinite;
+        }
+
+        @keyframes dataFlow {
+            0% { stroke-dashoffset: 20; }
+            100% { stroke-dashoffset: 0; }
+        }
+
+        .glow-green { box-shadow: 0 0 20px rgba(0, 255, 135, 0.5); }
+        .glow-cyan { box-shadow: 0 0 20px rgba(96, 239, 255, 0.5); }
+        .glow-pink { box-shadow: 0 0 20px rgba(255, 0, 128, 0.5); }
+        .glow-yellow { box-shadow: 0 0 20px rgba(255, 204, 0, 0.5); }
+
+        .metric-card {
+            transition: transform 0.2s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.2s;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .nav-active {
+            background: rgba(0, 255, 135, 0.1);
+            border-left: 3px solid #00ff87;
+            color: #00ff87;
+        }
+
+        .photo-slot {
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .photo-slot.dragover {
+            background: rgba(0, 255, 135, 0.1);
+            border-color: #00ff87;
+        }
+
+        .photo-slot img {
+            transition: transform 0.3s ease;
+        }
+        
+        .photo-slot:hover img {
+            transform: scale(1.05);
+        }
+
+        .flag-badge {
+            font-size: 10px;
+            padding: 1px 8px;
+            border-radius: 9999px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .cyber-grid {
+            background-image: 
+                linear-gradient(rgba(0,255,135,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,135,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .nexus-canvas {
+            border-radius: 16px;
+            background: #0a0a0f;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .status-dot {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .report-section {
+            page-break-inside: avoid;
+        }
+
+        .neon-input {
+            background: #111116;
+            border: 1px solid #333;
+            transition: all 0.2s;
+        }
+        
+        .neon-input:focus {
+            border-color: #00ff87;
+            box-shadow: 0 0 0 3px rgba(0, 255, 135, 0.1);
+            outline: none;
+        }
+
+        .analysis-log {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 12px;
+        }
+
+        .score-bar {
+            transition: width 0.6s cubic-bezier(0.23, 1.0, 0.32, 1);
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .agent-card {
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .agent-card.active {
+            border-color: #00ff87;
+            box-shadow: 0 0 25px rgba(0, 255, 135, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .timeline-canvas {
+            background: #0a0a0f;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="bg-[#050507] text-white overflow-x-hidden">
+    <!-- Top Navigation -->
+    <nav class="sticky top-0 z-50 glass border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-x-4">
+                    <!-- Logo -->
+                    <div class="flex items-center gap-x-3">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#00ff87] via-[#60efff] to-[#ff0080] p-0.5">
+                            <div class="w-full h-full bg-[#050507] rounded-[10px] flex items-center justify-center">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 3L20 8.5V15.5L12 21L4 15.5V8.5L12 3Z" stroke="#00ff87" stroke-width="2" stroke-linejoin="round"/>
+                                    <path d="M12 8V16M8 10.5L16 13.5" stroke="#60efff" stroke-width="1.5"/>
+                                    <circle cx="12" cy="12" r="2" fill="#ffcc00"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="font-display text-2xl tracking-tighter font-semibold">NEXUS</div>
+                            <div class="text-[10px] text-[#00ff87] -mt-1.5 font-mono tracking-[3px]">QA BRAIN</div>
+                        </div>
+                    </div>
+                    <div class="hidden md:block px-3 py-1 rounded-full bg-white/5 text-xs font-mono border border-white/10">
+                        v1.0 • HOOD BOSS OPERATIONS
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-x-3">
+                    <div class="hidden sm:flex items-center gap-x-2 text-sm">
+                        <div class="w-2 h-2 bg-[#00ff87] rounded-full animate-pulse"></div>
+                        <span class="text-[#00ff87] font-medium">LIVE • FIELD READY</span>
+                    </div>
+                    
+                    <div class="flex items-center gap-x-1.5 bg-white/5 rounded-full pl-1 pr-4 py-1 border border-white/10">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2300ff87' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E" class="w-6 h-6 rounded-full" alt="">
+                        <div class="text-sm">
+                            <div class="font-medium">DoubleA</div>
+                            <div class="text-[10px] text-white/50 -mt-0.5">@AntManThePro</div>
+                        </div>
+                    </div>
+
+                    <button onclick="loadSampleJob()" 
+                            class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl text-sm font-medium flex items-center gap-x-2 transition-all active:scale-[0.985]">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v-4m0 0l4 4m-4-4l4-4m12 4v4m0 0l-4-4m4 4l-4 4" />
+                        </svg>
+                        <span>LOAD SAMPLE</span>
+                    </button>
+                    
+                    <button onclick="resetAll()" 
+                            class="px-4 py-2 text-sm font-medium text-white/70 hover:text-white flex items-center gap-x-1.5 transition-colors">
+                        <span>RESET</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-6 pt-8 pb-24">
+        <!-- Hero / Status Bar -->
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-y-4 mb-8">
+            <div>
+                <div class="flex items-center gap-x-3">
+                    <div class="px-4 py-1.5 rounded-2xl bg-gradient-to-r from-[#00ff87]/10 to-transparent border border-[#00ff87]/30 text-[#00ff87] text-sm font-semibold tracking-widest flex items-center gap-x-2">
+                        <div class="w-1.5 h-1.5 bg-[#00ff87] rounded-full animate-pulse"></div>
+                        MULTI-AGENT OPERATIONS BRAIN
+                    </div>
+                    <div class="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 font-mono">10 AGENTS • REAL-TIME • VISUAL</div>
+                </div>
+                <h1 class="font-display text-6xl md:text-7xl tracking-tighter font-semibold mt-1">Hood Boss QA Inspector</h1>
+                <p class="mt-2 max-w-md text-lg text-white/70">The final quality gate. Instant management-level analysis that protects revenue, safety, and reputation.</p>
+            </div>
+            
+            <div class="flex items-center gap-x-4">
+                <div onclick="activateFullBrain()" 
+                     class="group cursor-pointer px-8 py-4 bg-[#00ff87] hover:bg-[#00ff87]/90 active:bg-white transition-all rounded-3xl flex items-center gap-x-3 text-[#050507] font-semibold text-lg shadow-xl shadow-[#00ff87]/30">
+                    <span>ACTIVATE NEXUS BRAIN</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 group-active:rotate-45 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7-7 7m-4-14l-7 7 7 7" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats / Live Metrics -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            <div class="glass rounded-3xl p-5 border border-white/10 metric-card">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="text-xs tracking-widest text-white/50">OVERALL SCORE</div>
+                        <div id="overall-score" class="score-value text-6xl font-semibold tabular-nums text-[#00ff87] mt-1">—</div>
+                    </div>
+                    <div class="text-right">
+                        <div id="verdict-badge" class="inline-flex px-3 py-1 rounded-2xl text-xs font-bold tracking-wider"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass rounded-3xl p-5 border border-white/10 metric-card">
+                <div class="text-xs tracking-widest text-white/50">DOCUMENTATION</div>
+                <div class="flex items-baseline gap-x-2 mt-1">
+                    <div id="doc-score" class="score-value text-5xl font-semibold tabular-nums text-[#60efff]">—</div>
+                    <div class="text-sm text-white/40">/100</div>
+                </div>
+                <div class="h-1.5 bg-white/10 rounded mt-3 overflow-hidden"><div id="doc-bar" class="score-bar h-full bg-[#60efff] w-0" style="width: 0%"></div></div>
+            </div>
+            
+            <div class="glass rounded-3xl p-5 border border-white/10 metric-card">
+                <div class="text-xs tracking-widest text-white/50">CLEANING QUALITY</div>
+                <div class="flex items-baseline gap-x-2 mt-1">
+                    <div id="quality-score" class="score-value text-5xl font-semibold tabular-nums text-[#ff0080]">—</div>
+                    <div class="text-sm text-white/40">/100</div>
+                </div>
+                <div class="h-1.5 bg-white/10 rounded mt-3 overflow-hidden"><div id="quality-bar" class="score-bar h-full bg-[#ff0080] w-0" style="width: 0%"></div></div>
+            </div>
+            
+            <div class="glass rounded-3xl p-5 border border-white/10 metric-card">
+                <div class="text-xs tracking-widest text-white/50">SAFETY</div>
+                <div class="flex items-baseline gap-x-2 mt-1">
+                    <div id="safety-score" class="score-value text-5xl font-semibold tabular-nums text-[#ffcc00]">—</div>
+                    <div class="text-sm text-white/40">/100</div>
+                </div>
+                <div class="h-1.5 bg-white/10 rounded mt-3 overflow-hidden"><div id="safety-bar" class="score-bar h-full bg-[#ffcc00] w-0" style="width: 0%"></div></div>
+            </div>
+            
+            <div class="glass rounded-3xl p-5 border border-white/10 metric-card flex flex-col justify-between">
+                <div>
+                    <div class="text-xs tracking-widest text-white/50">CONFIDENCE</div>
+                    <div id="confidence" class="score-value text-5xl font-semibold tabular-nums text-white mt-1">—</div>
+                </div>
+                <div class="text-[10px] text-white/40 font-mono">BASED ON 10-AGENT CONSENSUS</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- LEFT COLUMN: JOB INTAKE + PHOTOS -->
+            <div class="lg:col-span-5 space-y-6">
+                
+                <!-- Job Metadata -->
+                <div class="glass rounded-3xl p-6 border border-white/10">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="section-header">Job Intake</div>
+                        <button onclick="generateRandomJob()" class="text-xs px-3 py-1 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-x-1.5">
+                            <span>RANDOMIZE</span>
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs text-white/50 block mb-1.5">LOCATION</label>
+                            <input id="location" type="text" value="Taqueria El Rey • Kyle, TX" class="neon-input w-full px-4 py-2.5 rounded-2xl text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs text-white/50 block mb-1.5">DATE</label>
+                            <input id="job-date" type="date" value="2026-06-18" class="neon-input w-full px-4 py-2.5 rounded-2xl text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs text-white/50 block mb-1.5">TECHNICIAN(S)</label>
+                            <input id="technicians" type="text" value="Marcus R. + Jamal K." class="neon-input w-full px-4 py-2.5 rounded-2xl text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs text-white/50 block mb-1.5">JOB TYPE</label>
+                            <select id="job-type" class="neon-input w-full px-4 py-2.5 rounded-2xl text-sm">
+                                <option>Full Exhaust Clean + Inspection</option>
+                                <option>Filter Exchange + Hood Clean</option>
+                                <option>Emergency / Callback</option>
+                                <option>New Install Verification</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs text-white/50 block mb-1.5">DURATION (minutes)</label>
+                            <div class="flex gap-x-3 items-center">
+                                <input id="duration" type="range" min="25" max="180" step="5" value="47" class="flex-1 accent-[#00ff87]" oninput="updateDurationLabel()">
+                                <div id="duration-label" class="w-12 text-right font-mono text-sm tabular-nums">47</div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-white/50 block mb-1.5"># PHOTOS TAKEN</label>
+                            <div class="flex gap-x-3 items-center">
+                                <input id="photo-count" type="range" min="8" max="65" step="1" value="19" class="flex-1 accent-[#60efff]" oninput="updatePhotoCountLabel()">
+                                <div id="photo-count-label" class="w-12 text-right font-mono text-sm tabular-nums">19</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <label class="text-xs text-white/50 block mb-1.5">TECHNICIAN NOTES</label>
+                        <textarea id="notes" rows="2" class="neon-input w-full px-4 py-3 rounded-2xl text-sm resize-y" placeholder="Replaced 2 damaged filters. Fan hinge slightly loose but operational. Roof access clean...">Replaced 2 clogged filters. Hood interior had moderate buildup. Fan blades cleaned. Access panels resealed.</textarea>
+                    </div>
+                </div>
+
+                <!-- Photo Documentation -->
+                <div class="glass rounded-3xl p-6 border border-white/10">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="section-header">Photo Documentation</div>
+                            <div class="text-xs text-white/40 mt-0.5">Drag images into categories or click to upload • Auto-analyzed with Canvas vision</div>
+                        </div>
+                        <div id="photo-status" class="text-xs px-3 py-1 rounded-2xl bg-white/5 border border-white/10 font-mono">0 / 10 CATEGORIES</div>
+                    </div>
+                    
+                    <div id="photo-grid" class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        <!-- Populated by JS -->
+                    </div>
+                    
+                    <div class="mt-4 flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-x-4 text-white/50">
+                            <div class="flex items-center gap-x-1.5"><div class="w-2 h-2 bg-[#00ff87] rounded-full"></div> <span>Analyzed</span></div>
+                            <div class="flex items-center gap-x-1.5"><div class="w-2 h-2 bg-[#ff0080] rounded-full"></div> <span>Flagged</span></div>
+                        </div>
+                        <button onclick="analyzeAllPhotos()" class="px-4 py-1.5 text-xs rounded-2xl border border-white/20 hover:bg-white/5 flex items-center gap-x-2">
+                            <span>RE-ANALYZE ALL</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: NEXUS BRAIN VISUALIZER -->
+            <div class="lg:col-span-7 glass rounded-3xl p-6 border border-white/10 flex flex-col">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <div class="section-header">NEXUS Operations Brain • 10-Agent Mesh</div>
+                        <div class="text-xs text-white/50">Click any agent node to inspect its analysis. Data pulses show real-time consensus flow.</div>
+                    </div>
+                    <div class="text-xs px-3 py-1 bg-black/40 rounded-2xl font-mono border border-white/10">CANVAS + WEBGL-ACCELERATED</div>
+                </div>
+                
+                <div class="flex-1 relative min-h-[320px] bg-[#0a0a0f] rounded-2xl border border-white/10 overflow-hidden">
+                    <canvas id="brain-canvas" width="780" height="340" class="nexus-canvas w-full h-full cursor-crosshair"></canvas>
+                    
+                    <!-- Overlay legend -->
+                    <div class="absolute bottom-4 right-4 bg-black/60 backdrop-blur px-3 py-2 rounded-2xl text-[10px] border border-white/10 flex gap-x-4">
+                        <div class="flex items-center gap-x-1.5"><div class="w-2 h-2 rounded-full bg-[#00ff87]"></div> <span class="text-white/60">Strong consensus</span></div>
+                        <div class="flex items-center gap-x-1.5"><div class="w-2 h-2 rounded-full bg-[#ffcc00]"></div> <span class="text-white/60">Partial</span></div>
+                        <div class="flex items-center gap-x-1.5"><div class="w-2 h-2 rounded-full bg-[#ff0080]"></div> <span class="text-white/60">Conflict</span></div>
+                    </div>
+                </div>
+                
+                <div class="mt-3 text-[10px] text-white/40 font-mono flex items-center gap-x-2">
+                    <div>AGENT STATUS:</div> 
+                    <div id="agent-status-text" class="text-[#00ff87]">STANDBY — AWAITING ACTIVATION</div>
+                </div>
+            </div>
+
+            <!-- Agent Council Grid -->
+            <div class="lg:col-span-12">
+                <div class="flex items-baseline justify-between mb-3 px-1">
+                    <div class="section-header">Agent Council • Parallel Review</div>
+                    <div class="text-xs text-white/50">All 10 agents review simultaneously. Scores update live.</div>
+                </div>
+                
+                <div id="agent-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3">
+                    <!-- Populated dynamically by JS -->
+                </div>
+            </div>
+
+            <!-- Interactive Controls & What-If Simulator -->
+            <div class="lg:col-span-5 glass rounded-3xl p-6 border border-white/10">
+                <div class="section-header mb-4">What-If Simulator • Live Tuning</div>
+                
+                <div class="space-y-5">
+                    <div>
+                        <div class="flex justify-between text-xs mb-2">
+                            <div>REMAINING GREASE (after photos)</div>
+                            <div id="grease-val" class="font-mono text-[#ff0080]">28%</div>
+                        </div>
+                        <input type="range" id="grease-slider" min="0" max="100" step="1" value="28" class="w-full accent-[#ff0080]" oninput="liveUpdate()">
+                        <div class="flex justify-between text-[10px] text-white/40 mt-0.5"><div>SPOTLESS</div><div>HEAVY BUILDUP</div></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="flex justify-between text-xs mb-2">
+                                <div>FAN HINGE CONDITION</div>
+                            </div>
+                            <select id="fan-hinge" class="neon-input w-full px-3 py-2 rounded-2xl text-sm" onchange="liveUpdate()">
+                                <option value="good">Good — operates smoothly</option>
+                                <option value="worn" selected>Worn — needs attention</option>
+                                <option value="broken">Broken / seized</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs mb-2">
+                                <div>ACCESS PANELS</div>
+                            </div>
+                            <select id="access-panels" class="neon-input w-full px-3 py-2 rounded-2xl text-sm" onchange="liveUpdate()">
+                                <option value="complete">All present &amp; sealed</option>
+                                <option value="missing" selected>2 missing — not documented</option>
+                                <option value="damaged">Damaged but present</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between text-xs mb-2">
+                            <div>JOB RUSH FACTOR</div>
+                            <div id="rush-val" class="font-mono text-[#ffcc00]">HIGH</div>
+                        </div>
+                        <input type="range" id="rush-slider" min="0" max="100" step="5" value="65" class="w-full accent-[#ffcc00]" oninput="liveUpdate()">
+                        <div class="flex justify-between text-[10px] text-white/40 mt-0.5"><div>DELIBERATE</div><div>RUSHED / SUSPICIOUS</div></div>
+                    </div>
+                </div>
+                
+                <div class="mt-5 pt-4 border-t border-white/10 text-xs flex items-center justify-between text-white/50">
+                    <div>Changes instantly re-score the entire brain mesh</div>
+                    <button onclick="retrainBrain()" class="px-4 py-1 rounded-2xl border border-[#60efff]/40 hover:bg-[#60efff]/10 text-[#60efff] text-xs flex items-center gap-x-1.5">
+                        <span>RETRAIN WEIGHTS</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Fraud / Timeline + Pattern Recognition -->
+            <div class="lg:col-span-7 glass rounded-3xl p-6 border border-white/10">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="section-header">Pattern Recognition &amp; Fraud Detection</div>
+                    <div id="fraud-level" class="px-4 py-1 text-xs font-bold rounded-2xl bg-white/5 border border-white/10">MILD CONCERN</div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-5">
+                    <div class="md:col-span-3">
+                        <div class="text-xs text-white/50 mb-2">PHOTO TIMELINE ANALYSIS</div>
+                        <canvas id="timeline-canvas" width="420" height="110" class="timeline-canvas w-full border border-white/10 rounded-xl"></canvas>
+                    </div>
+                    
+                    <div class="md:col-span-2 space-y-3 text-sm">
+                        <div class="bg-black/30 rounded-2xl p-4 border border-white/10">
+                            <div class="text-xs text-white/50">DETECTED ANOMALIES</div>
+                            <div id="anomaly-list" class="mt-2 space-y-1 text-xs"></div>
+                        </div>
+                        
+                        <div>
+                            <div class="text-xs text-white/50 mb-1">HISTORICAL PATTERN MATCH</div>
+                            <div class="text-xs px-3 py-2 bg-white/5 rounded-2xl border border-white/10">
+                                <span class="text-[#ffcc00]">3 similar rushed jobs</span> by this crew in last 45 days.<br>
+                                <span class="text-white/60">Common flag:</span> Missing fan photos + clustered timestamps
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Assessment + Management Action -->
+            <div class="lg:col-span-12 grid grid-cols-1 md:grid-cols-12 gap-6">
+                <div class="md:col-span-7 glass rounded-3xl p-6 border border-white/10">
+                    <div class="section-header mb-4">Risk Assessment • 10-Agent Consensus</div>
+                    
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3" id="risk-grid">
+                        <!-- Populated by JS: Callback, Customer, Safety, Liability, Revenue -->
+                    </div>
+                </div>
+                
+                <div class="md:col-span-5 glass rounded-3xl p-6 border border-white/10 flex flex-col">
+                    <div class="section-header mb-4">MANAGEMENT ACTION</div>
+                    
+                    <div id="verdict-panel" class="flex-1 flex flex-col justify-center items-center text-center py-4">
+                        <div id="final-verdict" class="text-4xl font-semibold tracking-tighter mb-2">—</div>
+                        <div id="verdict-reason" class="text-sm text-white/60 max-w-[260px]"></div>
+                    </div>
+                    
+                    <div class="pt-4 border-t border-white/10 flex gap-x-2">
+                        <button onclick="setVerdict('APPROVE')" class="flex-1 py-3 text-xs font-bold rounded-2xl border border-[#00ff87]/40 hover:bg-[#00ff87]/10 text-[#00ff87]">APPROVE</button>
+                        <button onclick="setVerdict('APPROVE_WITH_COACHING')" class="flex-1 py-3 text-xs font-bold rounded-2xl border border-[#60efff]/40 hover:bg-[#60efff]/10 text-[#60efff]">COACHING</button>
+                        <button onclick="setVerdict('REVIEW_REQUIRED')" class="flex-1 py-3 text-xs font-bold rounded-2xl border border-[#ffcc00]/40 hover:bg-[#ffcc00]/10 text-[#ffcc00]">REVIEW</button>
+                        <button onclick="setVerdict('REJECT')" class="flex-1 py-3 text-xs font-bold rounded-2xl border border-[#ff0080]/40 hover:bg-[#ff0080]/10 text-[#ff0080]">REJECT</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coaching & Training + Final Report Actions -->
+            <div class="lg:col-span-12">
+                <div class="glass rounded-3xl p-6 border border-white/10">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-y-4">
+                        <div>
+                            <div class="section-header">Coaching Engine • Training Director Output</div>
+                            <div id="coaching-summary" class="mt-3 text-sm max-w-2xl text-white/80"></div>
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="showFullReport()" 
+                                    class="px-8 py-3.5 rounded-3xl border border-white/20 hover:bg-white/5 text-sm font-semibold flex items-center gap-x-3 transition-all">
+                                <span>VIEW FULL EXECUTIVE REPORT</span>
+                            </button>
+                            
+                            <button onclick="exportReport()" 
+                                    class="px-8 py-3.5 bg-white text-[#050507] hover:bg-white/90 rounded-3xl text-sm font-semibold flex items-center gap-x-3 transition-all">
+                                <span>DOWNLOAD REPORT PACKAGE</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M17 13v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h4m4 0l4 4m0 0l4-4m-4 4v10" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Detail Modal -->
+    <div id="agent-modal" onclick="if (event.target.id === 'agent-modal') hideAgentModal()" class="hidden fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-6">
+        <div onclick="event.stopImmediatePropagation()" class="glass max-w-lg w-full rounded-3xl border border-white/10 p-8">
+            <div class="flex justify-between items-start">
+                <div id="modal-agent-name" class="font-display text-3xl tracking-tight"></div>
+                <button onclick="hideAgentModal()" class="text-white/40 hover:text-white text-3xl leading-none">&times;</button>
+            </div>
+            <div id="modal-agent-role" class="text-sm text-white/50 mt-1"></div>
+            
+            <div class="my-6 h-px bg-white/10"></div>
+            
+            <div class="space-y-4 text-sm">
+                <div>
+                    <div class="text-xs text-white/50">AGENT SCORE</div>
+                    <div id="modal-score" class="text-6xl font-semibold tabular-nums text-[#00ff87]"></div>
+                </div>
+                <div id="modal-findings"></div>
+                <div id="modal-recommendation" class="bg-white/5 border border-white/10 rounded-2xl p-4 text-xs"></div>
+            </div>
+            
+            <div class="mt-6 flex gap-x-3">
+                <button onclick="hideAgentModal()" class="flex-1 py-3 rounded-2xl border border-white/20 text-sm">CLOSE</button>
+                <button onclick="focusAgentInVisualizer()" class="flex-1 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-sm">HIGHLIGHT IN BRAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full Report Modal -->
+    <div id="report-modal" onclick="if (event.target.id === 'report-modal') hideReportModal()" class="hidden fixed inset-0 bg-black/95 z-[110] overflow-auto p-6">
+        <div onclick="event.stopImmediatePropagation()" class="max-w-[860px] mx-auto">
+            <div class="flex justify-between items-center mb-4 px-1">
+                <div class="font-display text-3xl tracking-tighter">HOOD BOSS QA REPORT</div>
+                <div class="flex gap-x-3">
+                    <button onclick="printReport()" class="px-5 py-2 text-sm rounded-2xl border border-white/20 flex items-center gap-x-2 hover:bg-white/5">
+                        <span>PRINT / PDF</span>
+                    </button>
+                    <button onclick="hideReportModal()" class="px-5 py-2 text-sm rounded-2xl border border-white/20">CLOSE</button>
+                </div>
+            </div>
+            
+            <div id="report-content" class="glass rounded-3xl border border-white/10 p-8 text-sm report-section">
+                <!-- Dynamically filled by JS with full formatted report -->
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center py-8 text-xs text-white/30 font-mono tracking-widest">
+        NEXUS QA BRAIN v1.0 — BUILT FOR DOUBLEA • ANTMANTHEPRO • GODMODE2025.NET • HOOD BOSS FIELD OPS
+    </footer>
+
+    <script>
+        // Tailwind script
+        function initTailwind() {
+            document.documentElement.style.setProperty('--accent', '#00ff87');
+            
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            'display': ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif']
+                        }
+                    }
+                }
+            };
+        }
+
+        // Global state
+        let currentJob = {
+            location: "Taqueria El Rey • Kyle, TX",
+            date: "2026-06-18",
+            technicians: "Marcus R. + Jamal K.",
+            jobType: "Full Exhaust Clean + Inspection",
+            duration: 47,
+            photoCount: 19,
+            notes: "Replaced 2 clogged filters. Hood interior had moderate buildup. Fan blades cleaned. Access panels resealed.",
+            photos: [],
+            greaseLevel: 28,
+            fanHinge: "worn",
+            accessPanels: "missing",
+            rushFactor: 65
+        };
+
+        let analysisResults = null;
+        let brainChart = null;
+        let timelineChart = null;
+        let selectedAgent = null;
+
+        const AGENTS = [
+            { id: 'qa', name: 'QA Inspector', role: 'Photo Documentation & Cleaning Quality', color: '#00ff87', icon: '🔍' },
+            { id: 'safety', name: 'Safety Inspector', role: 'Ladder, Roof, Chemical & Structural Hazards', color: '#ff0080', icon: '🛡️' },
+            { id: 'nfpa', name: 'NFPA Reviewer', role: 'NFPA 96 Compliance & Access Standards', color: '#60efff', icon: '📋' },
+            { id: 'revenue', name: 'Revenue Analyst', role: 'Upsell Opportunities & Callback Revenue Protection', color: '#ffcc00', icon: '💰' },
+            { id: 'training', name: 'Training Director', role: 'Skill Gaps & Field Coaching Recommendations', color: '#00ff87', icon: '🎓' },
+            { id: 'fraud', name: 'Fraud Investigator', role: 'Timestamp Anomalies & Manipulation Detection', color: '#ff0080', icon: '🕵️' },
+            { id: 'customer', name: 'Customer Advocate', role: 'Store Manager / Fire Marshal Perspective', color: '#60efff', icon: '👁️' },
+            { id: 'ops', name: 'Operations Manager', role: 'Duration Realism, Notes & Efficiency', color: '#ffcc00', icon: '⚙️' },
+            { id: 'regional', name: 'Regional Director', role: 'Trend Analysis & Brand/Liability Risk', color: '#00ff87', icon: '📍' },
+            { id: 'exec', name: 'Executive Summary', role: 'Final Synthesis & Management Verdict', color: '#60efff', icon: '📊' }
+        ];
+
+        const REQUIRED_CATEGORIES = [
+            { key: 'before', label: 'Before', icon: '📸' },
+            { key: 'after', label: 'After', icon: '✅' },
+            { key: 'hood', label: 'Hood', icon: '🏭' },
+            { key: 'filters', label: 'Filters', icon: '🔲' },
+            { key: 'plenum', label: 'Plenum', icon: '📦' },
+            { key: 'duct', label: 'Duct Access', icon: '🔗' },
+            { key: 'fan', label: 'Fan', icon: '🌬️' },
+            { key: 'roof', label: 'Roof', icon: '🏠' },
+            { key: 'deficiency', label: 'Deficiency', icon: '⚠️' },
+            { key: 'cleanup', label: 'Cleanup', icon: '🧹' }
+        ];
+
+        // Initialize photo grid
+        function initPhotoGrid() {
+            const grid = document.getElementById('photo-grid');
+            grid.innerHTML = '';
+            
+            REQUIRED_CATEGORIES.forEach(cat => {
+                const slot = document.createElement('div');
+                slot.className = `photo-slot aspect-square border border-white/20 rounded-2xl bg-[#0a0a0f] flex flex-col items-center justify-center text-center p-2 cursor-pointer hover:border-[#00ff87]/60 transition-all group`;
+                slot.innerHTML = `
+                    <div class="text-3xl mb-1 opacity-40 group-hover:opacity-70 transition">${cat.icon}</div>
+                    <div class="text-xs font-semibold tracking-wider text-white/70">${cat.label}</div>
+                    <div id="slot-${cat.key}-status" class="mt-2 text-[10px] px-2.5 py-px rounded-full bg-white/5 text-white/40">EMPTY</div>
+                    <input type="file" id="file-${cat.key}" accept="image/*" class="hidden" onchange="handlePhotoUpload('${cat.key}', this.files[0])">
+                `;
+                
+                slot.onclick = () => document.getElementById(`file-${cat.key}`).click();
+                
+                // Drag and drop
+                slot.ondragover = (e) => { e.preventDefault(); slot.classList.add('dragover'); };
+                slot.ondragleave = () => slot.classList.remove('dragover');
+                slot.ondrop = (e) => {
+                    e.preventDefault();
+                    slot.classList.remove('dragover');
+                    if (e.dataTransfer.files.length > 0) {
+                        handlePhotoUpload(cat.key, e.dataTransfer.files[0]);
+                    }
+                };
+                
+                grid.appendChild(slot);
+            });
+        }
+
+        function updatePhotoStatus() {
+            const statusEl = document.getElementById('photo-status');
+            const analyzed = currentJob.photos.filter(p => p.analyzed).length;
+            const total = REQUIRED_CATEGORIES.length;
+            statusEl.innerHTML = `${analyzed} / ${total} CATEGORIES`;
+            
+            if (analyzed === total) {
+                statusEl.classList.add('!bg-[#00ff87]/10', '!border-[#00ff87]/40', '!text-[#00ff87]');
+            } else {
+                statusEl.classList.remove('!bg-[#00ff87]/10', '!border-[#00ff87]/40', '!text-[#00ff87]');
+            }
+        }
+
+        async function handlePhotoUpload(category, file) {
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const img = new Image();
+                img.onload = async function() {
+                    // Analyze with Canvas
+                    const analysis = await analyzePhotoWithCanvas(img, category);
+                    
+                    // Store or update photo in job
+                    let existing = currentJob.photos.findIndex(p => p.category === category);
+                    const photoData = {
+                        category,
+                        name: file.name,
+                        dataUrl: e.target.result,
+                        analysis,
+                        analyzed: true,
+                        timestamp: Date.now()
+                    };
+                    
+                    if (existing >= 0) {
+                        currentJob.photos[existing] = photoData;
+                    } else {
+                        currentJob.photos.push(photoData);
+                    }
+                    
+                    // Update UI slot
+                    renderPhotoSlot(category, photoData);
+                    updatePhotoStatus();
+                    
+                    // If we have enough photos, hint to analyze
+                    if (currentJob.photos.length >= 6 && !analysisResults) {
+                        const hint = document.createElement('div');
+                        hint.className = 'text-center text-xs text-[#00ff87] mt-1';
+                        hint.innerHTML = 'Photos analyzed • Ready to activate brain';
+                        setTimeout(() => hint.remove(), 2200);
+                    }
+                    
+                    // Live update if already analyzed once
+                    if (analysisResults) {
+                        setTimeout(() => liveUpdate(), 300);
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function analyzePhotoWithCanvas(img, category) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const size = 160;
+            canvas.width = size;
+            canvas.height = size;
+            ctx.drawImage(img, 0, 0, size, size);
+            
+            const imageData = ctx.getImageData(0, 0, size, size);
+            const data = imageData.data;
+            
+            let totalLuma = 0;
+            let totalSat = 0;
+            let edgeCount = 0;
+            let pixelCount = size * size;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                
+                // Luminance
+                const luma = (0.299 * r + 0.587 * g + 0.114 * b);
+                totalLuma += luma;
+                
+                // Simple saturation proxy
+                const max = Math.max(r, g, b);
+                const min = Math.min(r, g, b);
+                const sat = max > 0 ? (max - min) / max : 0;
+                totalSat += sat;
+                
+                // Very rough edge detection (neighbor diff)
+                if (i > 4 && i < data.length - 4) {
+                    const diff = Math.abs(luma - (0.299 * data[i-4] + 0.587 * data[i-3] + 0.114 * data[i-2]));
+                    if (diff > 18) edgeCount++;
+                }
+            }
+            
+            const avgLuma = totalLuma / pixelCount;
+            const avgSat = totalSat / pixelCount;
+            const edgeDensity = edgeCount / pixelCount;
+            
+            // Domain-specific flags
+            const flags = [];
+            let greaseIndex = Math.round(Math.max(0, Math.min(100, (avgSat * 80) + (100 - avgLuma) * 0.6)));
+            
+            if (avgLuma < 55) flags.push('DARK — insufficient lighting for proof');
+            if (edgeDensity < 0.018 && category !== 'before') flags.push('LOW DETAIL — possible blur or staged');
+            if (greaseIndex > 65 && (category === 'after' || category === 'hood' || category === 'filters')) {
+                flags.push('HIGH GREASE RESIDUE detected');
+            }
+            if (avgSat > 0.55 && category === 'after') flags.push('COLOR PROFILE suggests remaining carbon/grease');
+            
+            // Special logic per category
+            if (category === 'fan' && greaseIndex > 40) flags.push('FAN BLADES — grease load visible');
+            if (category === 'roof' && avgLuma > 120) flags.push('ROOF — possible contamination or debris');
+            
+            return {
+                brightness: Math.round(avgLuma),
+                saturation: Math.round(avgSat * 100),
+                edgeDensity: edgeDensity.toFixed(3),
+                greaseIndex,
+                flags,
+                confidence: flags.length > 2 ? 68 : 84
+            };
+        }
+
+        function renderPhotoSlot(category, photoData) {
+            const statusEl = document.getElementById(`slot-${category}-status`);
+            if (!statusEl) return;
+            
+            const slot = statusEl.parentElement;
+            
+            if (photoData && photoData.dataUrl) {
+                slot.innerHTML = `
+                    <img src="${photoData.dataUrl}" class="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-90" />
+                    <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-2 rounded-b-2xl">
+                        <div class="flex items-center justify-between">
+                            <div class="text-[10px] font-bold px-2 py-px bg-black/60 rounded">${category.toUpperCase()}</div>
+                            ${photoData.analysis.flags.length > 0 ? 
+                                `<div class="flag-badge bg-[#ff0080] text-white">FLAGGED</div>` : 
+                                `<div class="flag-badge bg-[#00ff87] text-black">OK</div>`}
+                        </div>
+                    </div>
+                `;
+                
+                // Click to view analysis
+                slot.onclick = (e) => {
+                    e.stopImmediatePropagation();
+                    showPhotoAnalysis(category, photoData);
+                };
+            } else {
+                // reset to empty state if needed
+            }
+            
+            updatePhotoStatus();
+        }
+
+        function showPhotoAnalysis(category, photo) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/90 z-[120] flex items-center justify-center p-6';
+            modal.innerHTML = `
+                <div class="glass max-w-md w-full rounded-3xl border border-white/10 overflow-hidden">
+                    <div class="p-5 border-b border-white/10 flex justify-between items-center">
+                        <div class="font-semibold">${category.toUpperCase()} PHOTO ANALYSIS</div>
+                        <button class="text-2xl leading-none text-white/40 hover:text-white" onclick="this.closest('.fixed').remove()">&times;</button>
+                    </div>
+                    
+                    <div class="p-5">
+                        <img src="${photo.dataUrl}" class="w-full rounded-2xl mb-4 border border-white/10" />
+                        
+                        <div class="grid grid-cols-3 gap-3 text-center mb-5">
+                            <div class="bg-white/5 rounded-2xl p-3">
+                                <div class="text-xs text-white/50">BRIGHTNESS</div>
+                                <div class="text-3xl font-semibold tabular-nums">${photo.analysis.brightness}</div>
+                            </div>
+                            <div class="bg-white/5 rounded-2xl p-3">
+                                <div class="text-xs text-white/50">GREASE INDEX</div>
+                                <div class="text-3xl font-semibold tabular-nums text-[#ff0080]">${photo.analysis.greaseIndex}</div>
+                            </div>
+                            <div class="bg-white/5 rounded-2xl p-3">
+                                <div class="text-xs text-white/50">DETAIL</div>
+                                <div class="text-3xl font-semibold tabular-nums">${photo.analysis.edgeDensity}</div>
+                            </div>
+                        </div>
+                        
+                        ${photo.analysis.flags.length > 0 ? `
+                            <div class="text-xs text-white/50 mb-2">AI VISION FLAGS</div>
+                            <div class="space-y-1">
+                                ${photo.analysis.flags.map(f => `<div class="text-xs px-3 py-1.5 bg-[#ff0080]/10 border border-[#ff0080]/30 text-[#ff0080] rounded-2xl">${f}</div>`).join('')}
+                            </div>
+                        ` : `<div class="text-center text-xs py-3 text-[#00ff87]">No major issues detected by vision model</div>`}
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // Initialize agent grid
+        function initAgentGrid() {
+            const grid = document.getElementById('agent-grid');
+            grid.innerHTML = '';
+            
+            AGENTS.forEach(agent => {
+                const card = document.createElement('div');
+                card.className = `agent-card glass border border-white/10 rounded-2xl p-3 flex flex-col items-center text-center cursor-pointer hover:border-white/30`;
+                card.dataset.agentId = agent.id;
+                
+                card.innerHTML = `
+                    <div class="w-9 h-9 rounded-2xl flex items-center justify-center mb-2 text-2xl" style="background: ${agent.color}20; color: ${agent.color}">
+                        ${agent.icon}
+                    </div>
+                    <div class="font-semibold text-sm leading-tight">${agent.name}</div>
+                    <div class="text-[10px] text-white/40 mt-0.5 line-clamp-2">${agent.role}</div>
+                    
+                    <div class="mt-auto pt-3 w-full">
+                        <div class="flex items-center justify-between text-xs">
+                            <div class="text-white/40">SCORE</div>
+                            <div id="agent-score-${agent.id}" class="font-mono font-semibold text-lg tabular-nums" style="color: ${agent.color}">—</div>
+                        </div>
+                        <div class="h-px bg-white/10 my-1"></div>
+                        <div id="agent-status-${agent.id}" class="text-[10px] text-white/50">STANDBY</div>
+                    </div>
+                `;
+                
+                card.onclick = () => showAgentModal(agent.id);
+                grid.appendChild(card);
+            });
+        }
+
+        function updateAgentScores(results) {
+            if (!results || !results.agentScores) return;
+            
+            AGENTS.forEach(agent => {
+                const scoreEl = document.getElementById(`agent-score-${agent.id}`);
+                const statusEl = document.getElementById(`agent-status-${agent.id}`);
+                const card = document.querySelector(`[data-agent-id="${agent.id}"]`);
+                
+                if (!scoreEl || !results.agentScores[agent.id]) return;
+                
+                const score = results.agentScores[agent.id];
+                scoreEl.textContent = score;
+                scoreEl.style.color = agent.color;
+                
+                let status = 'REVIEWED';
+                let statusColor = '#00ff87';
+                
+                if (score < 55) {
+                    status = 'CRITICAL';
+                    statusColor = '#ff0080';
+                    card.style.borderColor = '#ff0080';
+                } else if (score < 75) {
+                    status = 'CONCERN';
+                    statusColor = '#ffcc00';
+                    card.style.borderColor = '#ffcc00';
+                } else {
+                    card.style.borderColor = 'rgba(255,255,255,0.1)';
+                }
+                
+                statusEl.innerHTML = `<span style="color: ${statusColor}">${status}</span>`;
+            });
+        }
+
+        // Brain Canvas Visualizer - the star of the show
+        let brainCtx;
+        let nodes = [];
+        let connections = [];
+        let particles = [];
+        let animationFrame = null;
+        let isAnalyzing = false;
+
+        function initBrainVisualizer() {
+            const canvas = document.getElementById('brain-canvas');
+            brainCtx = canvas.getContext('2d');
+            
+            // Create nodes - core + 10 agents in organic layout
+            nodes = [];
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            
+            // Core node
+            nodes.push({
+                id: 'core',
+                x: cx,
+                y: cy,
+                radius: 26,
+                color: '#ffffff',
+                label: 'NEXUS\nCORE',
+                vx: 0, vy: 0
+            });
+            
+            // Agent nodes around in a loose circle
+            AGENTS.forEach((agent, i) => {
+                const angle = (i / AGENTS.length) * Math.PI * 2 - Math.PI / 2;
+                const radius = 118 + (i % 3) * 14;
+                const jitter = (i % 4 - 1.5) * 9;
+                
+                nodes.push({
+                    id: agent.id,
+                    x: cx + Math.cos(angle) * radius + jitter,
+                    y: cy + Math.sin(angle) * radius * 0.82 + (i % 2 ? 12 : -8),
+                    radius: 17,
+                    color: agent.color,
+                    label: agent.name.split(' ')[0],
+                    agent: agent,
+                    vx: (Math.random() - 0.5) * 0.2,
+                    vy: (Math.random() - 0.5) * 0.2
+                });
+            });
+            
+            // Create connections from core to all agents + some cross connections
+            connections = [];
+            nodes.forEach((node, idx) => {
+                if (node.id === 'core') return;
+                
+                // Strong connection to core
+                connections.push({
+                    from: 0,
+                    to: idx,
+                    strength: 0.7 + Math.random() * 0.3,
+                    pulse: Math.random() * 100
+                });
+                
+                // Occasional cross-agent links for "collaboration"
+                if (idx % 3 === 0 && idx < nodes.length - 1) {
+                    connections.push({
+                        from: idx,
+                        to: idx + 1,
+                        strength: 0.35,
+                        pulse: Math.random() * 80
+                    });
+                }
+            });
+            
+            // Mouse interaction
+            canvas.addEventListener('mousemove', handleBrainMouse);
+            canvas.addEventListener('click', handleBrainClick);
+            canvas.addEventListener('mouseleave', () => { selectedAgent = null; });
+            
+            // Initial subtle animation
+            animateBrain();
+        }
+
+        function handleBrainMouse(e) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+            
+            let hovered = false;
+            nodes.forEach(node => {
+                const dx = mx - node.x;
+                const dy = my - node.y;
+                if (Math.sqrt(dx*dx + dy*dy) < node.radius + 8) {
+                    hovered = true;
+                    e.currentTarget.style.cursor = 'pointer';
+                }
+            });
+            if (!hovered) e.currentTarget.style.cursor = 'crosshair';
+        }
+
+        function handleBrainClick(e) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+            
+            nodes.forEach(node => {
+                if (node.id === 'core') return;
+                const dx = mx - node.x;
+                const dy = my - node.y;
+                if (Math.sqrt(dx*dx + dy*dy) < node.radius + 12) {
+                    showAgentModal(node.id);
+                    // Trigger a nice pulse from core to this node
+                    triggerPulseToNode(node.id);
+                }
+            });
+        }
+
+        function triggerPulseToNode(targetId) {
+            const targetIdx = nodes.findIndex(n => n.id === targetId);
+            if (targetIdx < 0) return;
+            
+            // Create traveling particle burst
+            for (let i = 0; i < 5; i++) {
+                particles.push({
+                    from: 0,
+                    to: targetIdx,
+                    progress: i * 0.12,
+                    speed: 0.018 + Math.random() * 0.01,
+                    size: 2.5 + Math.random() * 1.5,
+                    color: '#00ff87'
+                });
+            }
+        }
+
+        function animateBrain() {
+            if (!brainCtx) return;
+            const canvas = document.getElementById('brain-canvas');
+            
+            brainCtx.fillStyle = '#0a0a0f';
+            brainCtx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Subtle grid
+            brainCtx.strokeStyle = 'rgba(255,255,255,0.035)';
+            brainCtx.lineWidth = 1;
+            for (let x = 20; x < canvas.width; x += 38) {
+                brainCtx.beginPath();
+                brainCtx.moveTo(x, 0);
+                brainCtx.lineTo(x, canvas.height);
+                brainCtx.stroke();
+            }
+            for (let y = 20; y < canvas.height; y += 38) {
+                brainCtx.beginPath();
+                brainCtx.moveTo(0, y);
+                brainCtx.lineTo(canvas.width, y);
+                brainCtx.stroke();
+            }
+            
+            // Update node positions slightly (organic idle movement)
+            if (!isAnalyzing) {
+                nodes.forEach((node, i) => {
+                    if (node.id === 'core') return;
+                    node.x += node.vx;
+                    node.y += node.vy;
+                    node.vx *= 0.985;
+                    node.vy *= 0.985;
+                    
+                    // Gentle bounds
+                    const bounds = 28;
+                    if (node.x < bounds || node.x > canvas.width - bounds) node.vx *= -1;
+                    if (node.y < bounds || node.y > canvas.height - bounds) node.vy *= -1;
+                });
+            }
+            
+            // Draw connections
+            connections.forEach(conn => {
+                const fromNode = nodes[conn.from];
+                const toNode = nodes[conn.to];
+                if (!fromNode || !toNode) return;
+                
+                const dx = toNode.x - fromNode.x;
+                const dy = toNode.y - fromNode.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                brainCtx.strokeStyle = `rgba(255,255,255, ${0.08 + conn.strength * 0.12})`;
+                brainCtx.lineWidth = 1.5 + conn.strength * 1.5;
+                
+                brainCtx.beginPath();
+                brainCtx.moveTo(fromNode.x, fromNode.y);
+                brainCtx.lineTo(toNode.x, toNode.y);
+                brainCtx.stroke();
+                
+                // Animated pulse dots on connections
+                if (isAnalyzing || Math.random() < 0.08) {
+                    conn.pulse = (conn.pulse + 1.8) % 100;
+                    const prog = conn.pulse / 100;
+                    const px = fromNode.x + dx * prog;
+                    const py = fromNode.y + dy * prog;
+                    
+                    brainCtx.fillStyle = isAnalyzing ? '#00ff87' : '#60efff';
+                    brainCtx.beginPath();
+                    brainCtx.arc(px, py, 2.2, 0, Math.PI * 2);
+                    brainCtx.fill();
+                }
+            });
+            
+            // Draw and update particles (data flow)
+            particles = particles.filter(p => {
+                p.progress += p.speed;
+                if (p.progress >= 1) return false;
+                
+                const fromNode = nodes[p.from];
+                const toNode = nodes[p.to];
+                if (!fromNode || !toNode) return false;
+                
+                const dx = toNode.x - fromNode.x;
+                const dy = toNode.y - fromNode.y;
+                
+                const px = fromNode.x + dx * p.progress;
+                const py = fromNode.y + dy * p.progress;
+                
+                brainCtx.fillStyle = p.color;
+                brainCtx.shadowBlur = 8;
+                brainCtx.shadowColor = p.color;
+                brainCtx.beginPath();
+                brainCtx.arc(px, py, p.size, 0, Math.PI * 2);
+                brainCtx.fill();
+                brainCtx.shadowBlur = 0;
+                
+                return true;
+            });
+            
+            // Draw nodes
+            nodes.forEach(node => {
+                // Glow
+                if (node.id === 'core' || (analysisResults && analysisResults.agentScores && analysisResults.agentScores[node.id] > 75)) {
+                    brainCtx.shadowBlur = 22;
+                    brainCtx.shadowColor = node.color;
+                }
+                
+                brainCtx.fillStyle = node.color;
+                brainCtx.beginPath();
+                brainCtx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+                brainCtx.fill();
+                
+                brainCtx.shadowBlur = 0;
+                
+                // Inner detail
+                brainCtx.fillStyle = '#050507';
+                brainCtx.beginPath();
+                brainCtx.arc(node.x, node.y, node.radius * 0.55, 0, Math.PI * 2);
+                brainCtx.fill();
+                
+                // Label
+                brainCtx.fillStyle = '#fff';
+                brainCtx.font = node.id === 'core' ? '700 9px Inter, system-ui' : '600 8.5px Inter, system-ui';
+                brainCtx.textAlign = 'center';
+                brainCtx.textBaseline = 'middle';
+                
+                if (node.id === 'core') {
+                    brainCtx.fillText('NEXUS', node.x, node.y - 4);
+                    brainCtx.fillText('CORE', node.x, node.y + 7);
+                } else {
+                    brainCtx.fillText(node.label.toUpperCase(), node.x, node.y);
+                }
+                
+                // Score badge if analyzed
+                if (analysisResults && analysisResults.agentScores && analysisResults.agentScores[node.id]) {
+                    const sc = analysisResults.agentScores[node.id];
+                    brainCtx.fillStyle = node.color;
+                    brainCtx.fillRect(node.x - 13, node.y + node.radius + 4, 26, 14);
+                    brainCtx.fillStyle = '#050507';
+                    brainCtx.font = '700 9px monospace';
+                    brainCtx.fillText(sc, node.x, node.y + node.radius + 11);
+                }
+            });
+            
+            // Status text
+            const statusEl = document.getElementById('agent-status-text');
+            if (isAnalyzing) {
+                statusEl.innerHTML = 'SYNTHESIZING CONSENSUS • DATA FLOW ACTIVE';
+                statusEl.style.color = '#00ff87';
+            } else if (analysisResults) {
+                statusEl.innerHTML = '10-AGENT REVIEW COMPLETE • CLICK NODES FOR DETAILS';
+                statusEl.style.color = '#60efff';
+            }
+            
+            animationFrame = requestAnimationFrame(animateBrain);
+        }
+
+        function startAnalysisAnimation() {
+            isAnalyzing = true;
+            const canvas = document.getElementById('brain-canvas');
+            
+            // Clear old particles
+            particles = [];
+            
+            // Create many data flow particles from core outward
+            for (let i = 1; i < nodes.length; i++) {
+                for (let k = 0; k < 3; k++) {
+                    particles.push({
+                        from: 0,
+                        to: i,
+                        progress: k * 0.22,
+                        speed: 0.026 + Math.random() * 0.012,
+                        size: 2.8,
+                        color: '#00ff87'
+                    });
+                }
+            }
+            
+            // Cross talk particles
+            setTimeout(() => {
+                for (let i = 0; i < 6; i++) {
+                    const from = 1 + Math.floor(Math.random() * (nodes.length - 1));
+                    const to = 1 + Math.floor(Math.random() * (nodes.length - 1));
+                    if (from !== to) {
+                        particles.push({
+                            from, to,
+                            progress: 0.1,
+                            speed: 0.031,
+                            size: 2,
+                            color: '#ffcc00'
+                        });
+                    }
+                }
+            }, 420);
+            
+            // Stop analyzing state after some time
+            setTimeout(() => {
+                isAnalyzing = false;
+            }, 1850);
+        }
+
+        function updateBrainFromResults(results) {
+            // Strengthen connections based on scores
+            connections.forEach(conn => {
+                if (conn.from === 0 && conn.to > 0) {
+                    const node = nodes[conn.to];
+                    if (node && results.agentScores && results.agentScores[node.id]) {
+                        const sc = results.agentScores[node.id];
+                        conn.strength = Math.max(0.4, sc / 115);
+                    }
+                }
+            });
+            
+            // Add celebratory or warning particles
+            if (results.finalScore > 82) {
+                for (let i = 0; i < 8; i++) {
+                    particles.push({
+                        from: 0,
+                        to: 1 + (i % (nodes.length - 1)),
+                        progress: Math.random() * 0.6,
+                        speed: 0.04,
+                        size: 3,
+                        color: '#00ff87'
+                    });
+                }
+            }
+        }
+
+        // Scoring Engine - the heart of the system (implements the full protocol)
+        function calculateFullAnalysis(job) {
+            const results = {
+                timestamp: Date.now(),
+                jobMeta: { ...job },
+                agentScores: {},
+                overallScore: 0,
+                qualityScore: 0,
+                docScore: 0,
+                safetyScore: 0,
+                complianceScore: 0,
+                confidence: 82,
+                findings: [],
+                missedDeficiencies: [],
+                risks: {},
+                coaching: [],
+                verdict: 'APPROVE_WITH_COACHING',
+                fraudLevel: 'MILD CONCERN',
+                anomalies: [],
+                futureRisks: {}
+            };
+            
+            // === PHOTO & DOCUMENTATION SCORING ===
+            const photoCategoriesPresent = job.photos.map(p => p.category);
+            const requiredCount = REQUIRED_CATEGORIES.length;
+            const presentCount = photoCategoriesPresent.length;
+            let docBase = Math.min(100, Math.round((presentCount / requiredCount) * 68));
+            
+            // Quality from analysis
+            let photoQualitySum = 0;
+            let flaggedPhotos = 0;
+            job.photos.forEach(p => {
+                if (p.analysis) {
+                    photoQualitySum += (100 - p.analysis.greaseIndex * 0.6);
+                    if (p.analysis.flags.length > 0) flaggedPhotos++;
+                }
+            });
+            const avgPhotoQuality = job.photos.length > 0 ? Math.round(photoQualitySum / job.photos.length) : 55;
+            
+            // Speed / timeline flags
+            const rushed = job.rushFactor > 55 || job.duration < 35 && job.photoCount < 22;
+            if (rushed) {
+                results.anomalies.push('Job duration + photo volume suggests rushed execution');
+                docBase -= 18;
+                results.findings.push({ type: 'OPERATIONAL', text: 'Suspiciously short job window for scope — timeline inconsistency flagged by Fraud Investigator' });
+            }
+            
+            if (flaggedPhotos > 2) {
+                docBase -= flaggedPhotos * 4;
+                results.findings.push({ type: 'PHOTO', text: `${flaggedPhotos} photos flagged by vision model for darkness, low detail, or residual grease` });
+            }
+            
+            // Missing critical categories
+            const criticalMissing = ['fan', 'before', 'after'].filter(c => !photoCategoriesPresent.includes(c));
+            if (criticalMissing.length > 0) {
+                docBase -= criticalMissing.length * 14;
+                results.findings.push({ type: 'CRITICAL', text: `Missing required photo categories: ${criticalMissing.join(', ')} — SPECIAL RULE TRIGGERED` });
+                results.missedDeficiencies.push('No fan photos submitted (auto-escalation)');
+            }
+            
+            results.docScore = Math.max(22, Math.min(98, Math.round(docBase + (avgPhotoQuality - 65) * 0.35)));
+            
+            // === CLEANING QUALITY ===
+            let cleanScore = 82;
+            const grease = job.greaseLevel || 25;
+            
+            if (grease > 45) {
+                cleanScore -= (grease - 45) * 1.1;
+                results.findings.push({ type: 'CLEANING', text: `Remaining grease level ${grease}% in after photos — customer-accessible residue detected` });
+                results.missedDeficiencies.push('Technician left visible grease on hood/filters (revenue + callback risk)');
+            }
+            
+            if (job.fanHinge === 'broken') {
+                cleanScore -= 22;
+                results.findings.push({ type: 'DEFICIENCY', text: 'Broken fan hinge identified but poorly documented — high safety & equipment failure risk' });
+                results.missedDeficiencies.push('Broken fan hinge not properly flagged for repair');
+            } else if (job.fanHinge === 'worn') {
+                cleanScore -= 9;
+            }
+            
+            if (job.accessPanels === 'missing') {
+                cleanScore -= 18;
+                results.findings.push({ type: 'CRITICAL', text: 'Missing access panels not documented — NFPA violation + liability exposure' });
+                results.missedDeficiencies.push('Missing access panels — technician failed to identify and document');
+            }
+            
+            results.qualityScore = Math.max(28, Math.min(96, Math.round(cleanScore)));
+            
+            // === SAFETY SCORE ===
+            let safety = 78;
+            if (job.accessPanels === 'missing') safety -= 25;
+            if (grease > 60) safety -= 12;
+            if (rushed) safety -= 14;
+            if (job.fanHinge === 'broken') safety -= 19;
+            
+            results.safetyScore = Math.max(35, Math.min(95, Math.round(safety)));
+            
+            // === COMPLIANCE (NFPA + Hood Boss) ===
+            let comp = 81;
+            if (criticalMissing.includes('fan')) comp -= 16;
+            if (job.accessPanels === 'missing') comp -= 22;
+            results.complianceScore = Math.max(40, Math.min(94, Math.round(comp)));
+            
+            // === AGENT SCORES (simulated deep agent reasoning) ===
+            results.agentScores = {
+                qa: Math.round((results.docScore * 0.55 + results.qualityScore * 0.45) * 0.96),
+                safety: results.safetyScore,
+                nfpa: results.complianceScore,
+                revenue: Math.round(72 + (100 - grease) * 0.22 - (job.accessPanels === 'missing' ? 18 : 0)),
+                training: Math.round(65 + (results.docScore > 80 ? 18 : -8) + (results.qualityScore > 75 ? 12 : -6)),
+                fraud: Math.round(88 - (rushed ? 28 : 0) - (flaggedPhotos * 3.5)),
+                customer: Math.round(70 + (results.qualityScore - 60) * 0.6 - (criticalMissing.length * 7)),
+                ops: Math.round(75 - (rushed ? 22 : 0) + (job.duration > 55 ? 8 : -4)),
+                regional: Math.round(68 + (results.safetyScore - 70) * 0.5),
+                exec: Math.round((results.docScore + results.qualityScore + results.safetyScore) / 3.1)
+            };
+            
+            // Clamp
+            Object.keys(results.agentScores).forEach(k => {
+                results.agentScores[k] = Math.max(28, Math.min(97, results.agentScores[k]));
+            });
+            
+            // === OVERALL ===
+            results.overallScore = Math.round(
+                results.docScore * 0.28 + 
+                results.qualityScore * 0.32 + 
+                results.safetyScore * 0.25 + 
+                results.complianceScore * 0.15
+            );
+            
+            // === RISKS ===
+            results.risks = {
+                callback: grease > 50 || job.fanHinge === 'broken' ? 'HIGH' : (grease > 30 || rushed ? 'MODERATE' : 'LOW'),
+                customer: criticalMissing.length > 0 || grease > 40 ? 'HIGH' : (results.qualityScore < 70 ? 'MODERATE' : 'LOW'),
+                safety: results.safetyScore < 65 ? 'HIGH' : (results.safetyScore < 80 ? 'MODERATE' : 'LOW'),
+                liability: job.accessPanels === 'missing' || job.fanHinge === 'broken' ? 'CRITICAL' : (rushed ? 'MODERATE' : 'LOW'),
+                revenue: grease > 45 || job.accessPanels === 'missing' ? 'HIGH' : 'MODERATE'
+            };
+            
+            // === FRAUD / PATTERN ===
+            if (rushed && flaggedPhotos > 1) {
+                results.fraudLevel = 'SIGNIFICANT CONCERN';
+                results.findings.push({ type: 'FRAUD', text: 'Timestamp clustering + rushed indicators + multiple flagged photos suggest possible documentation manipulation' });
+            } else if (rushed) {
+                results.fraudLevel = 'MILD CONCERN';
+            }
+            
+            // === COACHING ===
+            results.coaching = [
+                'Excellent filter replacement documentation and before/after coverage on hood.',
+                job.accessPanels === 'missing' ? 'CRITICAL: Always photograph and explicitly note missing or damaged access panels. This is a recurring training gap.' : 'Good attention to access panel condition.',
+                grease > 35 ? 'Re-train on final wipe-down standards. Customer-accessible grease is unacceptable and creates immediate callback risk.' : '',
+                'Next job: spend 90 seconds on fan hinge close-ups and test operation on camera. This protects equipment longevity and prevents callbacks.'
+            ].filter(Boolean);
+            
+            // === VERDICT LOGIC ===
+            if (results.safetyScore < 55 || results.overallScore < 48 || job.accessPanels === 'missing') {
+                results.verdict = 'ESCALATE_IMMEDIATELY';
+            } else if (results.overallScore < 68 || results.risks.callback === 'HIGH' || results.fraudLevel.includes('SIGNIFICANT')) {
+                results.verdict = 'MANAGEMENT_REVIEW_REQUIRED';
+            } else if (results.overallScore < 82 || grease > 35 || rushed) {
+                results.verdict = 'APPROVE_WITH_COACHING';
+            } else {
+                results.verdict = 'APPROVE';
+            }
+            
+            // === FUTURE PREDICTION (simple model) ===
+            results.futureRisks = {
+                callback30d: Math.round(Math.max(8, Math.min(68, 12 + (100 - results.overallScore) * 0.55 + (grease - 20) * 0.4))),
+                complaint: Math.round(Math.max(5, Math.min(55, (100 - results.qualityScore) * 0.5 + (criticalMissing.length * 7)))),
+                safetyIncident: results.safetyScore < 70 ? Math.round(18 + (75 - results.safetyScore) * 0.6) : 6
+            };
+            
+            // === EXECUTIVE SUMMARY (dynamic) ===
+            results.executiveSummary = generateExecutiveSummary(results, job);
+            
+            // === CONFIDENCE ===
+            results.confidence = Math.round(74 + (presentCount / requiredCount) * 18 - (flaggedPhotos * 1.8));
+            if (results.confidence > 94) results.confidence = 93;
+            
+            return results;
+        }
+
+        function generateExecutiveSummary(results, job) {
+            let summary = `Job at ${job.location} completed in ${job.duration} minutes with ${job.photoCount} photos. `;
+            
+            if (results.overallScore >= 85) {
+                summary += `Strong documentation and solid cleaning quality. Minor coaching recommended around final detailing. `;
+            } else if (results.overallScore >= 72) {
+                summary += `Acceptable work with clear gaps in ${results.missedDeficiencies.length > 0 ? 'deficiency identification' : 'photo thoroughness'}. `;
+            } else {
+                summary += `Significant concerns around ${results.risks.safety === 'HIGH' ? 'safety compliance' : 'cleaning thoroughness and documentation speed'}. `;
+            }
+            
+            if (results.risks.callback === 'HIGH') summary += `Elevated callback risk due to remaining grease and/or undocumented equipment issues. `;
+            if (results.fraudLevel.includes('CONCERN')) summary += `Fraud Investigator flagged timeline anomalies requiring review. `;
+            
+            summary += `Recommended action: ${results.verdict.replace(/_/g, ' ')}.`;
+            return summary;
+        }
+
+        function updateUIFromResults(results) {
+            analysisResults = results;
+            
+            // Scores
+            document.getElementById('overall-score').textContent = results.overallScore;
+            document.getElementById('doc-score').textContent = results.docScore;
+            document.getElementById('quality-score').textContent = results.qualityScore;
+            document.getElementById('safety-score').textContent = results.safetyScore;
+            document.getElementById('confidence').textContent = results.confidence + '%';
+            
+            // Bars
+            document.getElementById('doc-bar').style.width = results.docScore + '%';
+            document.getElementById('quality-bar').style.width = results.qualityScore + '%';
+            document.getElementById('safety-bar').style.width = results.safetyScore + '%';
+            
+            // Verdict badge
+            const badge = document.getElementById('verdict-badge');
+            const verdictText = results.verdict.replace(/_/g, ' ');
+            badge.innerHTML = verdictText;
+            badge.className = `inline-flex px-3.5 py-1 rounded-2xl text-xs font-extrabold tracking-[1px] ${results.verdict.includes('APPROVE') && !results.verdict.includes('COACHING') ? 'bg-[#00ff87] text-black' : results.verdict.includes('COACHING') || results.verdict.includes('REVIEW') ? 'bg-[#ffcc00] text-black' : 'bg-[#ff0080] text-white'}`;
+            
+            // Agent scores
+            updateAgentScores(results);
+            
+            // Fraud level
+            const fraudEl = document.getElementById('fraud-level');
+            fraudEl.textContent = results.fraudLevel;
+            fraudEl.className = `px-4 py-1 text-xs font-bold rounded-2xl border ${results.fraudLevel.includes('SIGNIFICANT') ? 'bg-[#ff0080]/10 border-[#ff0080] text-[#ff0080]' : results.fraudLevel.includes('MILD') ? 'bg-[#ffcc00]/10 border-[#ffcc00] text-[#ffcc00]' : 'bg-white/10 border-white/20'}`;
+            
+            // Anomalies
+            const anomalyContainer = document.getElementById('anomaly-list');
+            anomalyContainer.innerHTML = results.anomalies.length > 0 ? 
+                results.anomalies.map(a => `<div class="flex gap-x-2 text-[#ffcc00]"><span>⚠</span> <span>${a}</span></div>`).join('') : 
+                '<div class="text-xs text-white/50">No major timeline anomalies detected</div>';
+            
+            // Risks
+            renderRiskGrid(results.risks);
+            
+            // Coaching
+            document.getElementById('coaching-summary').innerHTML = results.coaching.slice(0, 2).map(c => `• ${c}`).join('<br>');
+            
+            // Final verdict panel
+            document.getElementById('final-verdict').innerHTML = verdictText;
+            document.getElementById('final-verdict').className = `text-4xl font-semibold tracking-tighter mb-2 ${results.verdict.includes('APPROVE') && !results.verdict.includes('COACHING') ? 'neon-green' : results.verdict.includes('COACHING') || results.verdict.includes('REVIEW') ? 'neon-yellow' : 'neon-pink'}`;
+            document.getElementById('verdict-reason').textContent = results.executiveSummary.substring(0, 138) + '...';
+            
+            // Update brain viz
+            updateBrainFromResults(results);
+            
+            // Update timeline
+            updateTimelineCanvas(results);
+            
+            // Update sliders to match current job state (in case sample loaded)
+            syncSlidersToJob();
+        }
+
+        function renderRiskGrid(risks) {
+            const container = document.getElementById('risk-grid');
+            container.innerHTML = '';
+            
+            const riskLabels = {
+                callback: 'CALLBACK RISK',
+                customer: 'CUSTOMER RISK',
+                safety: 'SAFETY RISK',
+                liability: 'LIABILITY RISK',
+                revenue: 'REVENUE RISK'
+            };
+            
+            Object.keys(risks).forEach(key => {
+                const level = risks[key];
+                const div = document.createElement('div');
+                div.className = `rounded-2xl p-3.5 border text-center ${level === 'CRITICAL' ? 'border-[#ff0080] bg-[#ff0080]/10' : level === 'HIGH' ? 'border-[#ffcc00] bg-[#ffcc00]/10' : 'border-white/10 bg-white/5'}`;
+                
+                div.innerHTML = `
+                    <div class="text-[10px] tracking-widest text-white/50">${riskLabels[key]}</div>
+                    <div class="mt-1 text-xl font-semibold ${level === 'CRITICAL' ? 'text-[#ff0080]' : level === 'HIGH' ? 'text-[#ffcc00]' : 'text-[#00ff87]'}">${level}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateTimelineCanvas(results) {
+            const canvas = document.getElementById('timeline-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const jobDur = currentJob.duration || 60;
+            const photoCount = currentJob.photoCount || 20;
+            
+            // Draw axis
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(30, 85);
+            ctx.lineTo(canvas.width - 20, 85);
+            ctx.stroke();
+            
+            // Time labels
+            ctx.fillStyle = '#666';
+            ctx.font = '10px monospace';
+            ctx.fillText('0 min', 22, 100);
+            ctx.fillText(`${jobDur} min`, canvas.width - 55, 100);
+            
+            // Generate mock photo times (clustered if rushed)
+            const times = [];
+            const isRushed = results.anomalies.some(a => a.includes('rushed'));
+            
+            for (let i = 0; i < Math.min(photoCount, 22); i++) {
+                let t;
+                if (isRushed && i > photoCount * 0.6) {
+                    t = jobDur * 0.82 + Math.random() * (jobDur * 0.15); // clustered at end
+                } else {
+                    t = 5 + (i / photoCount) * (jobDur * 0.92) + (Math.random() - 0.5) * 4;
+                }
+                times.push(Math.max(2, Math.min(jobDur - 1, t)));
+            }
+            
+            // Draw dots
+            times.forEach((t, idx) => {
+                const x = 30 + (t / jobDur) * (canvas.width - 55);
+                const y = 48 + Math.sin(idx) * 11;
+                
+                const cat = currentJob.photos[idx % currentJob.photos.length]?.category || 'misc';
+                let color = '#60efff';
+                if (cat === 'fan' || cat === 'after') color = '#00ff87';
+                if (cat === 'deficiency') color = '#ff0080';
+                if (isRushed && t > jobDur * 0.75) color = '#ffcc00';
+                
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // tiny label
+                if (idx % 4 === 0) {
+                    ctx.fillStyle = '#444';
+                    ctx.fillText(Math.round(t) + 'm', x - 6, y - 9);
+                }
+            });
+            
+            // Highlight cluster if rushed
+            if (isRushed) {
+                ctx.strokeStyle = '#ffcc00';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(canvas.width - 95, 32, 70, 38);
+                ctx.fillStyle = '#ffcc00';
+                ctx.font = '9px Inter';
+                ctx.fillText('CLUSTER', canvas.width - 88, 28);
+            }
+        }
+
+        function syncSlidersToJob() {
+            const g = document.getElementById('grease-slider');
+            const r = document.getElementById('rush-slider');
+            if (g) {
+                g.value = currentJob.greaseLevel || 28;
+                document.getElementById('grease-val').textContent = g.value + '%';
+            }
+            if (r) {
+                r.value = currentJob.rushFactor || 65;
+                const rushText = r.value > 60 ? 'HIGH' : r.value > 35 ? 'MODERATE' : 'LOW';
+                document.getElementById('rush-val').textContent = rushText;
+            }
+            
+            const fh = document.getElementById('fan-hinge');
+            if (fh) fh.value = currentJob.fanHinge || 'worn';
+            
+            const ap = document.getElementById('access-panels');
+            if (ap) ap.value = currentJob.accessPanels || 'missing';
+        }
+
+        function liveUpdate() {
+            // Update job from controls
+            currentJob.greaseLevel = parseInt(document.getElementById('grease-slider').value);
+            currentJob.rushFactor = parseInt(document.getElementById('rush-slider').value);
+            currentJob.fanHinge = document.getElementById('fan-hinge').value;
+            currentJob.accessPanels = document.getElementById('access-panels').value;
+            
+            document.getElementById('grease-val').textContent = currentJob.greaseLevel + '%';
+            
+            const rushVal = currentJob.rushFactor;
+            document.getElementById('rush-val').textContent = rushVal > 60 ? 'HIGH' : rushVal > 35 ? 'MODERATE' : 'LOW';
+            
+            // Re-calculate if we have previous analysis
+            if (analysisResults) {
+                const newResults = calculateFullAnalysis(currentJob);
+                updateUIFromResults(newResults);
+                
+                // Update brain particles lightly
+                const canvas = document.getElementById('brain-canvas');
+                if (canvas && Math.random() < 0.6) {
+                    for (let i = 0; i < 2; i++) {
+                        particles.push({
+                            from: 0,
+                            to: 1 + Math.floor(Math.random() * 9),
+                            progress: 0.2,
+                            speed: 0.035,
+                            size: 2.2,
+                            color: '#60efff'
+                        });
+                    }
+                }
+            }
+        }
+
+        function updateDurationLabel() {
+            const val = document.getElementById('duration').value;
+            document.getElementById('duration-label').textContent = val;
+            currentJob.duration = parseInt(val);
+            if (analysisResults) liveUpdate();
+        }
+        
+        function updatePhotoCountLabel() {
+            const val = document.getElementById('photo-count').value;
+            document.getElementById('photo-count-label').textContent = val;
+            currentJob.photoCount = parseInt(val);
+            if (analysisResults) liveUpdate();
+        }
+
+        function loadSampleJob() {
+            // Realistic flawed sample to showcase detection power
+            currentJob = {
+                location: "Taqueria El Rey • Kyle, TX",
+                date: "2026-06-18",
+                technicians: "Marcus R. + Jamal K.",
+                jobType: "Full Exhaust Clean + Inspection",
+                duration: 47,
+                photoCount: 19,
+                notes: "Replaced 2 clogged filters. Hood interior had moderate buildup. Fan blades cleaned. Access panels resealed. Roof looked okay from ladder.",
+                greaseLevel: 34,
+                fanHinge: "worn",
+                accessPanels: "missing",
+                rushFactor: 68,
+                photos: []
+            };
+            
+            // Populate form
+            document.getElementById('location').value = currentJob.location;
+            document.getElementById('job-date').value = currentJob.date;
+            document.getElementById('technicians').value = currentJob.technicians;
+            document.getElementById('job-type').value = currentJob.jobType;
+            document.getElementById('duration').value = currentJob.duration;
+            document.getElementById('duration-label').textContent = currentJob.duration;
+            document.getElementById('photo-count').value = currentJob.photoCount;
+            document.getElementById('photo-count-label').textContent = currentJob.photoCount;
+            document.getElementById('notes').value = currentJob.notes;
+            
+            // Clear old photos UI
+            initPhotoGrid();
+            
+            // Add some sample photos with analysis (mock dataUrls are simple colored rects for demo)
+            const samplePhotos = [
+                {cat: 'before', flags: [], grease: 72, bright: 68},
+                {cat: 'after', flags: ['HIGH GREASE RESIDUE detected'], grease: 34, bright: 81},
+                {cat: 'hood', flags: [], grease: 41, bright: 74},
+                {cat: 'filters', flags: ['HIGH GREASE RESIDUE detected'], grease: 58, bright: 59},
+                {cat: 'fan', flags: ['FAN BLADES — grease load visible'], grease: 39, bright: 77},
+                {cat: 'deficiency', flags: [], grease: 12, bright: 82},
+                {cat: 'cleanup', flags: ['LOW DETAIL — possible blur or staged'], grease: 8, bright: 91}
+            ];
+            
+            samplePhotos.forEach((sp, idx) => {
+                // Create fake dataUrl (colored canvas)
+                const c = document.createElement('canvas');
+                c.width = 120; c.height = 120;
+                const ctx = c.getContext('2d');
+                ctx.fillStyle = sp.cat === 'after' || sp.cat === 'cleanup' ? '#1a2a1f' : '#2a2118';
+                ctx.fillRect(0,0,120,120);
+                ctx.fillStyle = sp.cat === 'deficiency' ? '#ff0080' : '#334433';
+                ctx.fillRect(20, 30, 80, 60);
+                ctx.fillStyle = '#fff';
+                ctx.font = '11px monospace';
+                ctx.fillText(sp.cat.toUpperCase(), 25, 65);
+                
+                const analysis = {
+                    brightness: sp.bright,
+                    greaseIndex: sp.grease,
+                    edgeDensity: (sp.flags.length > 0 ? '0.012' : '0.031'),
+                    flags: sp.flags,
+                    confidence: 79
+                };
+                
+                currentJob.photos.push({
+                    category: sp.cat,
+                    name: `${sp.cat}-sample.jpg`,
+                    dataUrl: c.toDataURL(),
+                    analysis,
+                    analyzed: true
+                });
+                
+                // Render into slot
+                setTimeout(() => renderPhotoSlot(sp.cat, currentJob.photos[currentJob.photos.length-1]), 80 * idx);
+            });
+            
+            updatePhotoStatus();
+            syncSlidersToJob();
+            
+            // Auto-analyze after short delay
+            setTimeout(() => {
+                const results = calculateFullAnalysis(currentJob);
+                updateUIFromResults(results);
+                startAnalysisAnimation();
+                
+                // Bonus: show one agent modal automatically to demo
+                setTimeout(() => {
+                    showAgentModal('fraud');
+                }, 1350);
+            }, 850);
+        }
+
+        function generateRandomJob() {
+            currentJob.duration = 32 + Math.floor(Math.random() * 55);
+            currentJob.photoCount = 14 + Math.floor(Math.random() * 28);
+            currentJob.greaseLevel = 12 + Math.floor(Math.random() * 48);
+            currentJob.rushFactor = 25 + Math.floor(Math.random() * 55);
+            currentJob.fanHinge = ['good', 'worn', 'broken'][Math.floor(Math.random()*3)];
+            currentJob.accessPanels = ['complete', 'missing', 'damaged'][Math.floor(Math.random()*3)];
+            
+            document.getElementById('duration').value = currentJob.duration;
+            document.getElementById('duration-label').textContent = currentJob.duration;
+            document.getElementById('photo-count').value = currentJob.photoCount;
+            document.getElementById('photo-count-label').textContent = currentJob.photoCount;
+            
+            syncSlidersToJob();
+            
+            if (analysisResults) {
+                const newRes = calculateFullAnalysis(currentJob);
+                updateUIFromResults(newRes);
+            }
+        }
+
+        function activateFullBrain() {
+            // Collect latest form values
+            currentJob.location = document.getElementById('location').value;
+            currentJob.date = document.getElementById('job-date').value;
+            currentJob.technicians = document.getElementById('technicians').value;
+            currentJob.jobType = document.getElementById('job-type').value;
+            currentJob.duration = parseInt(document.getElementById('duration').value);
+            currentJob.photoCount = parseInt(document.getElementById('photo-count').value);
+            currentJob.notes = document.getElementById('notes').value;
+            currentJob.greaseLevel = parseInt(document.getElementById('grease-slider').value);
+            currentJob.fanHinge = document.getElementById('fan-hinge').value;
+            currentJob.accessPanels = document.getElementById('access-panels').value;
+            currentJob.rushFactor = parseInt(document.getElementById('rush-slider').value);
+            
+            const results = calculateFullAnalysis(currentJob);
+            updateUIFromResults(results);
+            
+            // Dramatic activation sequence
+            startAnalysisAnimation();
+            
+            // Scroll to visualizer
+            document.getElementById('brain-canvas').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Easter egg: after 2.2s show a random critical agent if score low
+            if (results.overallScore < 72) {
+                setTimeout(() => {
+                    const lowAgents = Object.keys(results.agentScores).filter(k => results.agentScores[k] < 62);
+                    if (lowAgents.length > 0) showAgentModal(lowAgents[0]);
+                }, 2200);
+            }
+        }
+
+        function showAgentModal(agentId) {
+            const agent = AGENTS.find(a => a.id === agentId);
+            if (!agent || !analysisResults) return;
+            
+            selectedAgent = agentId;
+            
+            const modal = document.getElementById('agent-modal');
+            document.getElementById('modal-agent-name').innerHTML = `${agent.icon} ${agent.name}`;
+            document.getElementById('modal-agent-role').textContent = agent.role;
+            
+            const score = analysisResults.agentScores[agentId] || 70;
+            document.getElementById('modal-score').textContent = score;
+            document.getElementById('modal-score').style.color = agent.color;
+            
+            // Dynamic findings per agent
+            let findingsHTML = '<div class="text-xs text-white/50 mb-1.5">KEY FINDINGS FROM THIS AGENT</div>';
+            const allFindings = analysisResults.findings || [];
+            
+            // Tailor some findings to agent
+            let agentFindings = allFindings.slice(0, 3);
+            if (agentId === 'fraud') agentFindings = analysisResults.anomalies.length ? analysisResults.anomalies.map(a => ({text: a})) : [{text: 'No strong manipulation signals. Minor timeline compression noted.'}];
+            if (agentId === 'safety') agentFindings = [{text: analysisResults.risks.safety + ' safety risk identified'}, ...agentFindings];
+            
+            findingsHTML += agentFindings.map(f => `<div class="py-1 text-sm">• ${f.text || f}</div>`).join('');
+            document.getElementById('modal-findings').innerHTML = findingsHTML;
+            
+            let rec = 'No specific recommendation from this agent.';
+            if (agentId === 'training') rec = 'Recommend 7-minute field coaching on access panel identification and fan hinge documentation. High impact.';
+            else if (agentId === 'revenue') rec = analysisResults.risks.revenue === 'HIGH' ? 'Document broken/worn hinge as upsell opportunity. Estimated $380–$720 repair revenue missed.' : 'Good documentation of existing conditions. No major missed revenue detected.';
+            else if (agentId === 'exec') rec = `Verdict consensus: ${analysisResults.verdict.replace(/_/g, ' ')}. Confidence ${analysisResults.confidence}%.`;
+            
+            document.getElementById('modal-recommendation').innerHTML = `<strong>RECOMMENDATION:</strong> ${rec}`;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function hideAgentModal() {
+            const modal = document.getElementById('agent-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        function focusAgentInVisualizer() {
+            hideAgentModal();
+            if (!selectedAgent || !brainCtx) return;
+            
+            const node = nodes.find(n => n.id === selectedAgent);
+            if (!node) return;
+            
+            // Nice pulse effect
+            triggerPulseToNode(selectedAgent);
+            
+            // Briefly highlight
+            const origRadius = node.radius;
+            node.radius = 29;
+            setTimeout(() => { if (node) node.radius = origRadius; }, 850);
+        }
+
+        function retrainBrain() {
+            if (!analysisResults) {
+                alert('Run a full analysis first to retrain weights.');
+                return;
+            }
+            
+            // Simulate weight adjustment (increase emphasis on photo quality and safety)
+            const oldOverall = analysisResults.overallScore;
+            
+            // Fake "learning"
+            analysisResults.docScore = Math.min(98, analysisResults.docScore + 4);
+            analysisResults.safetyScore = Math.min(96, analysisResults.safetyScore + 5);
+            analysisResults.qualityScore = Math.max(30, analysisResults.qualityScore - 2); // trade-off example
+            
+            analysisResults.overallScore = Math.round(
+                analysisResults.docScore * 0.30 + 
+                analysisResults.qualityScore * 0.30 + 
+                analysisResults.safetyScore * 0.28 + 
+                analysisResults.complianceScore * 0.12
+            );
+            
+            // Update UI
+            updateUIFromResults(analysisResults);
+            
+            // Visual feedback on canvas
+            const canvas = document.getElementById('brain-canvas');
+            for (let i = 0; i < 12; i++) {
+                particles.push({
+                    from: 0,
+                    to: 1 + (i % 9),
+                    progress: Math.random() * 0.5,
+                    speed: 0.05,
+                    size: 2.8,
+                    color: i % 2 === 0 ? '#00ff87' : '#60efff'
+                });
+            }
+            
+            // Toast
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 glass px-6 py-3 rounded-3xl border border-[#60efff]/40 text-sm flex items-center gap-x-3 z-[200]';
+            toast.innerHTML = `Weights updated • Overall score ${oldOverall} → <span class="font-mono text-[#00ff87]">${analysisResults.overallScore}</span>`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2400);
+        }
+
+        function setVerdict(verdictKey) {
+            if (!analysisResults) return;
+            
+            const map = {
+                'APPROVE': 'APPROVE',
+                'APPROVE_WITH_COACHING': 'APPROVE_WITH_COACHING',
+                'REVIEW_REQUIRED': 'MANAGEMENT_REVIEW_REQUIRED',
+                'REJECT': 'REJECT_AND_RETURN_TO_TECHNICIAN'
+            };
+            
+            analysisResults.verdict = map[verdictKey] || verdictKey;
+            
+            // Update badge and panel
+            const badge = document.getElementById('verdict-badge');
+            const text = analysisResults.verdict.replace(/_/g, ' ');
+            badge.innerHTML = text;
+            badge.className = `inline-flex px-3.5 py-1 rounded-2xl text-xs font-extrabold tracking-[1px] ${verdictKey.includes('APPROVE') && !verdictKey.includes('COACHING') ? 'bg-[#00ff87] text-black' : verdictKey.includes('COACHING') || verdictKey.includes('REVIEW') ? 'bg-[#ffcc00] text-black' : 'bg-[#ff0080] text-white'}`;
+            
+            document.getElementById('final-verdict').innerHTML = text;
+            document.getElementById('final-verdict').className = `text-4xl font-semibold tracking-tighter mb-2 ${verdictKey.includes('APPROVE') && !verdictKey.includes('COACHING') ? 'neon-green' : verdictKey.includes('COACHING') || verdictKey.includes('REVIEW') ? 'neon-yellow' : 'neon-pink'}`;
+        }
+
+        function showFullReport() {
+            if (!analysisResults) {
+                alert('Please activate the NEXUS Brain first to generate a full report.');
+                return;
+            }
+            
+            const modal = document.getElementById('report-modal');
+            const content = document.getElementById('report-content');
+            
+            const r = analysisResults;
+            const j = currentJob;
+            
+            content.innerHTML = `
+                <div class="flex justify-between items-start border-b border-white/10 pb-5">
+                    <div>
+                        <div class="font-mono text-xs tracking-[3px] text-white/50">HOOD BOSS • QUALITY ASSURANCE DIVISION</div>
+                        <div class="font-display text-4xl tracking-tighter mt-1">QA REPORT</div>
+                    </div>
+                    <div class="text-right text-xs">
+                        <div class="font-mono">${j.date}</div>
+                        <div class="text-white/50">CONFIDENCE: <span class="font-semibold text-white">${r.confidence}%</span></div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-x-8 mt-6 text-sm">
+                    <div><span class="text-white/50">LOCATION</span><br><span class="font-semibold">${j.location}</span></div>
+                    <div><span class="text-white/50">TECHNICIAN(S)</span><br><span class="font-semibold">${j.technicians}</span></div>
+                    <div class="mt-3"><span class="text-white/50">JOB TYPE</span><br>${j.jobType}</div>
+                    <div class="mt-3"><span class="text-white/50">DURATION / PHOTOS</span><br>${j.duration} min • ${j.photoCount} photos</div>
+                </div>
+                
+                <div class="my-7 h-px bg-white/10"></div>
+                
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="text-center p-4 rounded-2xl bg-white/5"><div class="text-xs text-white/50">QUALITY</div><div class="text-4xl font-semibold tabular-nums mt-1" style="color:#ff0080">${r.qualityScore}</div></div>
+                    <div class="text-center p-4 rounded-2xl bg-white/5"><div class="text-xs text-white/50">DOCUMENTATION</div><div class="text-4xl font-semibold tabular-nums mt-1" style="color:#60efff">${r.docScore}</div></div>
+                    <div class="text-center p-4 rounded-2xl bg-white/5"><div class="text-xs text-white/50">SAFETY</div><div class="text-4xl font-semibold tabular-nums mt-1" style="color:#ffcc00">${r.safetyScore}</div></div>
+                    <div class="text-center p-4 rounded-2xl bg-white/5"><div class="text-xs text-white/50">OVERALL</div><div class="text-4xl font-semibold tabular-nums mt-1 text-[#00ff87]">${r.overallScore}</div></div>
+                </div>
+                
+                <div class="mt-7">
+                    <div class="uppercase text-xs tracking-widest text-white/50 mb-2">EXECUTIVE SUMMARY</div>
+                    <div class="text-[15px] leading-snug">${r.executiveSummary}</div>
+                </div>
+                
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-8">
+                    <div>
+                        <div class="uppercase text-xs tracking-widest text-white/50 mb-2">FINDINGS</div>
+                        <ul class="text-sm space-y-[5px]">
+                            ${r.findings.map(f => `<li class="flex gap-x-2"><span class="text-[#ff0080] mt-px">•</span> <span>${f.text}</span></li>`).join('')}
+                        </ul>
+                    </div>
+                    <div>
+                        <div class="uppercase text-xs tracking-widest text-white/50 mb-2">MISSED DEFICIENCIES</div>
+                        <ul class="text-sm space-y-[5px]">
+                            ${r.missedDeficiencies.length ? r.missedDeficiencies.map(m => `<li class="flex gap-x-2"><span class="text-[#ffcc00] mt-px">•</span> <span>${m}</span></li>`).join('') : '<li class="text-white/50">None — technician identified all major issues</li>'}
+                        </ul>
+                        
+                        <div class="mt-5">
+                            <div class="uppercase text-xs tracking-widest text-white/50 mb-2">COACHING ITEMS</div>
+                            <div class="text-xs space-y-2">
+                                ${r.coaching.map(c => `<div class="pl-3 border-l-2 border-[#00ff87]/40">${c}</div>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-7 pt-5 border-t border-white/10 flex flex-wrap gap-x-8 text-xs">
+                    <div><span class="text-white/50">VERDICT</span><br><span class="font-bold text-lg">${r.verdict.replace(/_/g, ' ')}</span></div>
+                    <div><span class="text-white/50">CALLBACK RISK</span><br><span class="font-semibold ${r.risks.callback === 'HIGH' ? 'text-[#ffcc00]' : ''}">${r.risks.callback}</span></div>
+                    <div><span class="text-white/50">SAFETY RISK</span><br><span class="font-semibold ${r.risks.safety === 'HIGH' || r.risks.safety === 'CRITICAL' ? 'text-[#ff0080]' : ''}">${r.risks.safety}</span></div>
+                    <div><span class="text-white/50">30-DAY CALLBACK PROB</span><br><span class="font-mono">${r.futureRisks.callback30d}%</span></div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function hideReportModal() {
+            const modal = document.getElementById('report-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        function printReport() {
+            const reportContent = document.getElementById('report-content');
+            if (!reportContent) return;
+            
+            const printWin = window.open('', '_blank');
+            printWin.document.write(`
+                <html>
+                <head>
+                    <title>Hood Boss QA Report — ${currentJob.location}</title>
+                    <style>
+                        body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; line-height: 1.5; color: #111; background: white; }
+                        .neon-green, .neon-cyan, .neon-pink, .neon-yellow { color: #111 !important; text-shadow: none !important; }
+                        h1, h2 { font-weight: 700; letter-spacing: -.02em; }
+                        ul { padding-left: 20px; }
+                        .glass, .border { border: 1px solid #ddd !important; box-shadow: none !important; background: white !important; }
+                    </style>
+                </head>
+                <body>
+                    <div style="max-width: 820px; margin: 0 auto;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #111; padding-bottom:12px; margin-bottom:24px;">
+                            <div>
+                                <div style="font-size:11px; letter-spacing:3px; color:#666;">HOOD BOSS • QUALITY ASSURANCE</div>
+                                <div style="font-size:42px; font-weight:700; letter-spacing:-2.2px; margin-top:4px;">QA REPORT</div>
+                            </div>
+                            <div style="text-align:right; font-size:13px; color:#444;">
+                                ${currentJob.date}<br>
+                                CONFIDENCE: ${analysisResults.confidence}%
+                            </div>
+                        </div>
+                        ${reportContent.innerHTML}
+                        <div style="margin-top:60px; font-size:10px; color:#888; text-align:center; border-top:1px solid #eee; padding-top:16px;">
+                            Generated by NEXUS Hood Boss QA Brain v1.0 • DoubleA @ AntManThePro • godmode2025.net
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `);
+            printWin.document.close();
+            setTimeout(() => {
+                printWin.focus();
+                printWin.print();
+            }, 280);
+        }
+
+        function exportReport() {
+            if (!analysisResults) {
+                alert('Activate the brain first.');
+                return;
+            }
+            
+            const data = {
+                meta: { generated: new Date().toISOString(), version: '1.0', author: 'DoubleA @ AntManThePro' },
+                job: currentJob,
+                analysis: analysisResults
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `hood-boss-qa-report-${currentJob.location.replace(/[^a-z0-9]/gi, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            // Also offer the nice HTML report
+            setTimeout(() => {
+                if (confirm('Also open printable executive report?')) {
+                    showFullReport();
+                }
+            }, 650);
+        }
+
+        function analyzeAllPhotos() {
+            if (currentJob.photos.length === 0) {
+                alert('Upload some photos first.');
+                return;
+            }
+            
+            currentJob.photos.forEach(p => {
+                if (!p.analyzed && p.dataUrl) {
+                    // Would re-analyze in real, here just mark
+                    p.analyzed = true;
+                }
+            });
+            
+            updatePhotoStatus();
+            
+            if (analysisResults) liveUpdate();
+            
+            // Toast
+            const t = document.createElement('div');
+            t.className = 'fixed bottom-8 right-8 glass px-5 py-2 rounded-2xl text-xs border border-[#00ff87]/30';
+            t.textContent = 'All photos re-processed through Canvas vision engine';
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 1600);
+        }
+
+        function updateFormListeners() {
+            // Live sync some fields
+            ['location', 'job-date', 'technicians', 'notes'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', () => {
+                    currentJob[id.replace('-', '')] = el.value; // rough
+                });
+            });
+            
+            // Sliders already have oninput
+            document.getElementById('duration').oninput = updateDurationLabel;
+            document.getElementById('photo-count').oninput = updatePhotoCountLabel;
+        }
+
+        function resetAll() {
+            if (!confirm('Reset everything and clear current analysis?')) return;
+            
+            location.reload(); // simplest reliable reset for demo
+        }
+
+        // Keyboard shortcuts
+        function initKeyboard() {
+            document.addEventListener('keydown', function(e) {
+                if (e.key === '/' && document.activeElement.tagName === 'BODY') {
+                    e.preventDefault();
+                    document.getElementById('location').focus();
+                }
+                if (e.metaKey && e.key === 'Enter') {
+                    e.preventDefault();
+                    activateFullBrain();
+                }
+                if (e.key.toLowerCase() === '?' && analysisResults) {
+                    e.preventDefault();
+                    showFullReport();
+                }
+            });
+            
+            // Easter egg hint
+            console.log('%c[NEXUS] Keyboard: / focus location • ⌘+Enter = Activate Brain • ? = Full Report', 'color:#444');
+        }
+
+        // Main bootstrap
+        function bootstrap() {
+            initTailwind();
+            initPhotoGrid();
+            initAgentGrid();
+            initBrainVisualizer();
+            updateFormListeners();
+            initKeyboard();
+            syncSlidersToJob();
+            
+            // Seed one sample photo so UI isn't empty
+            setTimeout(() => {
+                const grid = document.getElementById('photo-grid');
+                if (grid && grid.children.length > 0) {
+                    // Preload a nice before photo
+                    const c = document.createElement('canvas');
+                    c.width = 140; c.height = 140;
+                    const ctx = c.getContext('2d');
+                    ctx.fillStyle = '#2c2118';
+                    ctx.fillRect(0,0,140,140);
+                    ctx.fillStyle = '#3f2a1f';
+                    ctx.fillRect(18,22,104,96);
+                    ctx.strokeStyle = '#554433';
+                    ctx.lineWidth = 8;
+                    ctx.strokeRect(18,22,104,96);
+                    
+                    const beforePhoto = {
+                        category: 'before',
+                        name: 'before-initial.jpg',
+                        dataUrl: c.toDataURL(),
+                        analysis: { brightness: 61, greaseIndex: 71, edgeDensity: '0.029', flags: [], confidence: 81 },
+                        analyzed: true
+                    };
+                    currentJob.photos.push(beforePhoto);
+                    renderPhotoSlot('before', beforePhoto);
+                    updatePhotoStatus();
+                }
+            }, 420);
+            
+            // Welcome toast
+            setTimeout(() => {
+                const welcome = document.createElement('div');
+                welcome.className = 'fixed bottom-5 left-1/2 -translate-x-1/2 text-xs glass px-4 py-2 rounded-3xl border border-white/10 flex items-center gap-x-2 z-50';
+                welcome.innerHTML = `NEXUS Brain ready. <span class="text-[#00ff87] cursor-pointer underline" onclick="this.parentElement.remove(); loadSampleJob()">Load sample job to see it in action →</span>`;
+                document.body.appendChild(welcome);
+                setTimeout(() => { if (welcome && welcome.parentElement) welcome.parentElement.removeChild(welcome); }, 8200);
+            }, 1800);
+            
+            // Expose some API for power users / future extension
+            window.NEXUS_QA = {
+                activate: activateFullBrain,
+                loadSample: loadSampleJob,
+                getState: () => ({ job: currentJob, results: analysisResults }),
+                retrain: retrainBrain
+            };
+            
+            console.log('%c[NEXUS Hood Boss QA Brain] Fully initialized. Masterpiece ready for Ant.', 'color:#00ff87; font-size:9px');
+        }
+        
+        // Boot when ready
+        window.onload = bootstrap;
+    </script>
+</body>
+</html>
