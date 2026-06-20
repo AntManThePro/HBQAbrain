@@ -1,0 +1,16 @@
+{
+  "name": "NEXUS Hood Boss QA Brain",
+  "short_name": "NEXUS QA",
+  "description": "Multi-agent quality assurance system for kitchen exhaust cleaning operations. Built by DoubleA @ AntManThePro",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#050507",
+  "theme_color": "#00ff87",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
