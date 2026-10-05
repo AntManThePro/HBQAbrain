@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="NEXUS FIELD OS — KEC Field Monitor v2 (runtime pack loading). This page ships with no job data; jobs appear only after a PIX live pack is loaded.">
+<meta name="theme-color" content="#00ff87">
+<title>NEXUS FIELD OS • KEC Monitor v2 (runtime)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2300ff87'/%3E%3Cstop offset='0.5' stop-color='%2360efff'/%3E%3Cstop offset='1' stop-color='%23ff0080'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='18' y='18' width='64' height='64' rx='12' fill='none' stroke='url(%23g)' stroke-width='8'/%3E%3Ctext x='50' y='62' text-anchor='middle' font-size='28' font-family='sans-serif' fill='%23ffcc00' font-weight='700'%3EK%3C/text%3E%3C/svg%3E">
+<style>
+/* NEXUS palette: #00ff87 green, #60efff cyan, #ff0080 pink, #ffcc00 yellow. No external fonts, no media queries (fluid wrap layout). */
+:root {
+  --bg: #050508;
+  --panel: rgba(17,17,22,0.92);
+  --border: rgba(255,255,255,0.08);
+  --green: #00ff87;
+  --cyan: #60efff;
+  --pink: #ff0080;
+  --yellow: #ffcc00;
+  --blue: #3b82f6;
+  --text: #e8e8ed;
+  --muted: rgba(232,232,237,0.55);
+  --radius: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { min-height: 100%; }
+body {
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.cyber-grid {
+  background-image:
+    linear-gradient(rgba(0,255,135,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,135,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  min-height: 100vh;
+}
+.font-display { font-family: 'Space Grotesk', Inter, system-ui, sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+.neon-g { color: var(--green); text-shadow: 0 0 10px rgba(0,255,135,.5); }
+.neon-c { color: var(--cyan); text-shadow: 0 0 10px rgba(96,239,255,.5); }
+.neon-p { color: var(--pink); text-shadow: 0 0 10px rgba(255,0,128,.5); }
+.neon-y { color: var(--yellow); text-shadow: 0 0 10px rgba(255,204,0,.5); }
+.glass {
+  background: var(--panel);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.wrap { max-width: 1440px; margin: 0 auto; padding: 16px; }
+header.app-header {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 16px 18px; margin-bottom: 14px;
+  border: 1px solid rgba(0,255,135,.25);
+  box-shadow: 0 0 24px rgba(0,255,135,.08);
+}
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand-mark {
+  width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg, #00ff87, #60efff 50%, #ff0080);
+  display: grid; place-items: center; font-weight: 800; color: #050508; font-size: 18px;
+  box-shadow: 0 0 18px rgba(0,255,135,.4);
+}
+.brand h1 { font-size: 1.15rem; }
+.brand .sub { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 999px; font-size: .68rem; font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase;
+  border: 1px solid var(--border); background: rgba(255,255,255,.04);
+  max-width: 100%;
+}
+.chip.demo { border-color: var(--yellow); color: var(--yellow); }
+.chip.live-warn { border-color: var(--pink); color: var(--pink); }
+.chip.live-data { border-color: var(--green); color: var(--green); }
+.chip.live-session { border-color: var(--cyan); color: var(--cyan); }
+.chip.deleted { border-color: #ef4444; color: #fca5a5; background: rgba(239,68,68,.12); }
+.chip.hist { border-color: rgba(232,232,237,.35); color: var(--text); background: rgba(255,255,255,.06); }
+.chip.legacy { border-color: var(--yellow); color: var(--yellow); background: rgba(255,204,0,.08); }
+.chip.locked { border-color: var(--pink); color: var(--pink); background: rgba(255,0,128,.08); }
+.header-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn, button {
+  font-family: inherit; cursor: pointer; border: none; border-radius: 8px;
+  padding: 8px 14px; font-size: .78rem; font-weight: 600; letter-spacing: .02em;
+  transition: transform .15s, box-shadow .15s, background .15s;
+}
+button:disabled { opacity: .45; cursor: not-allowed; }
+.btn:active:not(:disabled) { transform: scale(.97); }
+.btn-primary { background: rgba(0,255,135,.15); color: var(--green); border: 1px solid rgba(0,255,135,.4); }
+.btn-primary:hover:not(:disabled) { background: rgba(0,255,135,.25); box-shadow: 0 0 14px rgba(0,255,135,.25); }
+.btn-cyan { background: rgba(96,239,255,.12); color: var(--cyan); border: 1px solid rgba(96,239,255,.35); }
+.btn-pink { background: rgba(255,0,128,.12); color: var(--pink); border: 1px solid rgba(255,0,128,.4); }
+.btn-yellow { background: rgba(255,204,0,.12); color: var(--yellow); border: 1px solid rgba(255,204,0,.4); }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-ghost:hover:not(:disabled) { color: var(--text); border-color: rgba(255,255,255,.2); }
+.legend {
+  display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center;
+  padding: 10px 14px; margin-bottom: 14px; font-size: .8rem;
+}
+.legend-item { display: flex; align-items: center; gap: 8px; }
+.legend-meta { margin-left: auto; font-size: .72rem; color: var(--muted); flex-wrap: wrap; gap: 4px 10px; }
+.nowrap { white-space: nowrap; }
+.kec-chip { white-space: nowrap; font-size: .7rem; letter-spacing: .02em; }
+.state-dot { font-size: .62rem; white-space: nowrap; }
+.state-dot.open { color: var(--green); }
+.state-dot.deleted { color: var(--muted); }
+.chip.verified { border-color: var(--cyan); color: var(--cyan); background: rgba(96,239,255,.07); }
+.sq {
+  width: 14px; height: 14px; border-radius: 3px; border: 2.5px solid;
+  background: transparent; flex-shrink: 0;
+}
+.sq.blue { border-color: var(--blue); box-shadow: 0 0 8px rgba(59,130,246,.5); }
+.sq.green { border-color: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,.5); }
+.sq.red { border-color: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,.6); }
+/* Fluid two-column layout: side-by-side on desktop, stacks on narrow screens without media queries */
+.layout { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+.layout > aside { flex: 1 1 300px; min-width: 0; max-width: 100%; }
+.layout > main { flex: 999 1 540px; min-width: 0; max-width: 100%; }
+.panel { padding: 14px; }
+.panel-title {
+  font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted); font-weight: 600; margin-bottom: 10px;
+}
+.queue-list { display: flex; flex-direction: column; gap: 8px; max-height: 52vh; overflow-y: auto; }
+.job-card {
+  padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+  background: rgba(255,255,255,.02); cursor: pointer; transition: border-color .15s, background .15s;
+}
+.job-card:hover { border-color: rgba(96,239,255,.35); background: rgba(96,239,255,.04); }
+.job-card.active { border-color: var(--green); box-shadow: 0 0 12px rgba(0,255,135,.15); }
+.job-card.is-deleted { border-style: dashed; border-color: rgba(239,68,68,.45); }
+.job-card.list-row { cursor: default; opacity: .8; }
+.job-card .row1 { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.job-card .loc { font-weight: 600; font-size: .88rem; }
+.job-card .meta { font-size: .72rem; color: var(--muted); margin-top: 4px; }
+.date-link {
+  color: var(--cyan); text-decoration: underline; text-underline-offset: 2px;
+  font-weight: 600; font-size: .78rem;
+}
+.date-plain { color: var(--text); font-weight: 600; font-size: .78rem; }
+.status-pill {
+  font-size: .62rem; padding: 2px 7px; border-radius: 999px; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+}
+.st-watching { background: rgba(96,239,255,.15); color: var(--cyan); }
+.st-before { background: rgba(59,130,246,.2); color: #93c5fd; }
+.st-eligible { background: rgba(0,255,135,.18); color: var(--green); }
+.st-def { background: rgba(239,68,68,.2); color: #fca5a5; }
+.st-checkpoint { background: rgba(255,204,0,.18); color: var(--yellow); }
+.st-deleted { background: rgba(239,68,68,.25); color: #fecaca; }
+.st-nobefore { background: rgba(255,204,0,.12); color: var(--yellow); }
+.counts { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+.count-chip {
+  font-size: .65rem; padding: 2px 6px; border-radius: 4px; border: 1.5px solid;
+  font-variant-numeric: tabular-nums;
+}
+.count-chip.b { border-color: var(--blue); color: #93c5fd; }
+.count-chip.a { border-color: #22c55e; color: #86efac; }
+.count-chip.d { border-color: #ef4444; color: #fca5a5; }
+.count-chip.v { border-color: var(--yellow); color: var(--yellow); }
+.count-chip.p { border-color: rgba(232,232,237,.35); color: var(--text); }
+.tabs-strip {
+  display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 10px;
+  scrollbar-width: thin; max-width: 100%;
+}
+.tab {
+  flex-shrink: 0; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+  background: rgba(255,255,255,.03); cursor: pointer; font-size: .75rem;
+  display: flex; align-items: center; gap: 8px; max-width: 220px;
+}
+.tab.active { border-color: var(--green); background: rgba(0,255,135,.08); }
+.tab .tab-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
+.tab .close-tab {
+  opacity: .5; font-size: .9rem; line-height: 1; padding: 0 2px; background: none; border: none; color: inherit; cursor: pointer;
+}
+.tab .close-tab:hover { opacity: 1; color: var(--pink); }
+.sticky-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; position: sticky; top: 0; z-index: 5; padding: 6px 0; background: linear-gradient(var(--bg) 70%, transparent); }
+.job-workspace { min-height: 420px; }
+.empty-state {
+  padding: 40px 20px; text-align: center; color: var(--muted); font-size: .9rem;
+}
+.empty-state .big { font-size: 1.25rem; color: var(--text); margin-bottom: 6px; }
+.dropzone {
+  margin: 16px auto 0; max-width: 560px; padding: 22px 16px; border-radius: 12px;
+  border: 2px dashed rgba(96,239,255,.4); background: rgba(96,239,255,.04); color: var(--cyan);
+  font-size: .82rem;
+}
+.dropzone.drag, body.dragging .dropzone { border-color: var(--green); background: rgba(0,255,135,.08); color: var(--green); }
+.hint { font-size: .72rem; color: var(--muted); margin-top: 8px; }
+code.k { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72rem; color: var(--yellow); background: rgba(255,204,0,.06); padding: 1px 4px; border-radius: 4px; }
+.results { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-top: 10px; font-size: .72rem; }
+.results li { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border); }
+.results li.ok { border-color: rgba(0,255,135,.35); color: var(--green); }
+.results li.err { border-color: rgba(239,68,68,.5); color: #fca5a5; background: rgba(239,68,68,.06); }
+.results li .rmsg { display: block; color: var(--muted); margin-top: 2px; }
+.results li.err .rmsg { color: #fca5a5; }
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+}
+.media-tile {
+  min-height: 124px; border-radius: 8px; border: 3px solid; position: relative;
+  background: rgba(255,255,255,.03); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; overflow: hidden; padding: 16px 6px 6px;
+}
+.media-tile.before { border-color: var(--blue); box-shadow: 0 0 10px rgba(59,130,246,.25); }
+.media-tile.after { border-color: #22c55e; box-shadow: 0 0 10px rgba(34,197,94,.25); }
+.media-tile.deficiency { border-color: #ef4444; box-shadow: 0 0 12px rgba(239,68,68,.4); }
+.job-deleted .media-tile { filter: saturate(.45); opacity: .8; }
+.media-tile .kind {
+  font-size: .58rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .85;
+}
+.media-tile .slot {
+  font-size: .66rem; font-weight: 600; text-align: center; margin: 4px 0; line-height: 1.2;
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+}
+.media-tile .ts { font-size: .6rem; color: var(--muted); font-variant-numeric: tabular-nums; text-align: center; }
+.media-tile .vid-badge, .media-tile .img-no {
+  position: absolute; top: 4px; font-size: .55rem; background: rgba(0,0,0,.7);
+  padding: 1px 4px; border-radius: 3px;
+}
+.media-tile .vid-badge { right: 4px; color: var(--yellow); }
+.media-tile .vid-badge.unv { color: var(--muted); }
+.media-tile .img-no { left: 4px; color: var(--muted); }
+.banner {
+  padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; font-size: .8rem;
+  border: 1px solid; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between;
+}
+.banner.warn { border-color: rgba(255,204,0,.45); background: rgba(255,204,0,.08); color: var(--yellow); }
+.banner.ok { border-color: rgba(0,255,135,.4); background: rgba(0,255,135,.08); color: var(--green); }
+.banner.crit { border-color: rgba(239,68,68,.5); background: rgba(239,68,68,.1); color: #fca5a5; }
+.banner.info { border-color: rgba(96,239,255,.35); background: rgba(96,239,255,.06); color: var(--cyan); }
+.table-scroll { max-width: 100%; overflow-x: auto; max-height: 300px; overflow-y: auto; }
+.gap-table { width: 100%; border-collapse: collapse; font-size: .75rem; margin: 10px 0; }
+.gap-table th, .gap-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+.gap-table th { color: var(--muted); font-weight: 600; font-size: .65rem; letter-spacing: .08em; text-transform: uppercase; }
+.gap-table .hot { color: var(--pink); font-weight: 700; }
+.gap-table .nowrap { white-space: nowrap; }
+.vr-ok { color: var(--green); font-weight: 600; }
+.vr-bad { color: #fca5a5; font-weight: 600; }
+.vr-warn { color: var(--yellow); font-weight: 600; }
+.vr-na { color: var(--muted); }
+.flag-list { list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: .74rem; }
+.flag-list li { padding: 6px 8px; border-left: 3px solid var(--yellow); background: rgba(255,204,0,.05); border-radius: 0 6px 6px 0; }
+.flag-list li strong { color: var(--yellow); font-weight: 600; margin-right: 6px; }
+.flag-list.resolved li { border-left-color: var(--cyan); background: rgba(96,239,255,.04); color: var(--muted); }
+.flag-list.resolved li strong { color: var(--cyan); }
+.gate-panel { margin-top: 14px; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,0,128,.4); background: rgba(255,0,128,.05); }
+.gate-panel .gate-state { font-weight: 700; color: var(--pink); letter-spacing: .06em; }
+.gate-list { list-style: none; margin-top: 8px; font-size: .74rem; display: flex; flex-direction: column; gap: 3px; }
+.actions-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.paste-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.paste-row input {
+  flex: 1; min-width: 0; width: 180px; background: rgba(0,0,0,.4); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; color: var(--text); font-size: .78rem; font-family: inherit;
+}
+.paste-row input:focus { outline: none; border-color: var(--cyan); }
+.loop-panel { margin-top: 14px; }
+.loop-statement {
+  font-size: .78rem; color: var(--muted); line-height: 1.55; padding: 10px;
+  border-left: 3px solid var(--cyan); background: rgba(96,239,255,.04); border-radius: 0 8px 8px 0;
+}
+.notes-area {
+  width: 100%; min-height: 72px; background: rgba(0,0,0,.35); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; color: var(--text); font-size: .78rem; font-family: inherit; resize: vertical;
+}
+.notes-area:focus { outline: none; border-color: var(--green); }
+.bridge-panel { margin-top: 14px; }
+.bridge-panel pre {
+  font-size: .65rem; background: rgba(0,0,0,.45); padding: 10px; border-radius: 8px;
+  overflow: auto; max-height: 180px; color: var(--cyan); border: 1px solid var(--border); margin-top: 8px;
+  white-space: pre-wrap;
+}
+.toast {
+  position: fixed; bottom: 20px; right: 20px; z-index: 100;
+  padding: 12px 16px; border-radius: 10px; background: rgba(17,17,22,.95);
+  border: 1px solid var(--green); color: var(--green); font-size: .8rem; font-weight: 600;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5); transform: translateY(120%); opacity: 0;
+  transition: transform .25s, opacity .25s; max-width: min(320px, calc(100vw - 40px));
+  pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 90;
+  display: none; align-items: center; justify-content: center; padding: 16px;
+}
+.modal-bg.open { display: flex; }
+.modal { max-width: 560px; width: 100%; max-height: 85vh; overflow: auto; padding: 20px; }
+.modal h3 { margin-bottom: 10px; }
+.modal .summary-body { font-size: .82rem; white-space: pre-wrap; font-family: ui-monospace, monospace; color: var(--muted); }
+.footer-note { margin-top: 18px; text-align: center; font-size: .68rem; color: var(--muted); padding-bottom: 24px; }
+.section-gap { margin-top: 14px; }
+.progress-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; margin-top: 8px; }
+.progress-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--blue), var(--green)); transition: width .3s; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="cyber-grid">
+  <div class="wrap">
+    <header class="app-header glass">
+      <div class="brand">
+        <div class="brand-mark font-display">N</div>
+        <div>
+          <h1 class="font-display"><span class="neon-g">NEXUS FIELD OS</span> <span style="opacity:.4">/</span> <span class="neon-c">KEC Monitor</span> <span class="neon-y" style="font-size:.75rem">v2 runtime</span></h1>
+          <div class="sub">DoubleA · Field OS · PIX Bridge runtime packs · MyTechPix SOP</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="chip demo" id="chipDataMode" title="The page ships with no job data">NO PACK LOADED</span>
+        <span class="chip live-warn" id="chipSession" title="A loaded file is not a live MTP session">NO LIVE MTP SESSION</span>
+        <span class="chip locked" id="chipPublish" title="Client publish is never actionable from this page">CLIENT PUBLISH LOCKED</span>
+        <button class="btn btn-cyan" id="btnLoadPacks" type="button">LOAD PACKS</button>
+        <button class="btn btn-ghost" id="btnReset" type="button">CLEAR</button>
+        <button class="btn btn-cyan" id="btnRefresh" type="button">↻ REFRESH QUEUE</button>
+      </div>
+    </header>
+
+    <input type="file" id="fileInput" class="sr-only" accept=".json,application/json" multiple aria-label="Load PIX live pack JSON files">
+
+    <div class="legend glass">
+      <span class="panel-title" style="margin:0">Color legend (MTP square outlines)</span>
+      <div class="legend-item"><span class="sq blue"></span> <strong>Blue</strong> = Before</div>
+      <div class="legend-item"><span class="sq green"></span> <strong>Green</strong> = After</div>
+      <div class="legend-item"><span class="sq red"></span> <strong>Red</strong> = Deficiency <span class="neon-p">(most important)</span></div>
+      <div class="legend-item legend-meta"><span class="nowrap">Job type filter: <strong class="neon-g kec-chip" id="kecFilterChip">KEC</strong></span><span class="nowrap">Times shown in <strong class="neon-c">CT (America/Chicago)</strong></span></div>
+    </div>
+
+    <div class="layout">
+      <aside>
+        <section class="glass panel">
+          <div class="panel-title">Unpublished KEC queue · Page <span id="pageNum">1</span></div>
+          <div style="font-size:.68rem;color:var(--muted);margin-bottom:8px">Rows come only from packs loaded at runtime. Watch several jobs at once via tabs.</div>
+          <div class="queue-list" id="queueList"></div>
+          <div class="actions-row" style="margin-top:10px">
+            <button class="btn btn-ghost" id="btnPage2" type="button">Page 2 (older)</button>
+            <button class="btn btn-ghost" id="btnPage1" type="button">Page 1</button>
+            <button class="btn btn-ghost" id="btnAllTypes" type="button">Show all list types</button>
+          </div>
+        </section>
+
+        <section class="glass panel section-gap">
+          <div class="panel-title">Pack loader</div>
+          <p style="font-size:.74rem;color:var(--muted)">Load one or more <code class="k">PIX-LIVE-PACK-job-*.json</code> files (and optionally an unpublished-list JSON). Drag-and-drop anywhere on the page works too. Nothing is saved; reload clears everything.</p>
+          <div class="actions-row"><button class="btn btn-cyan" id="btnLoadPacks2" type="button">Choose pack files…</button></div>
+          <ul class="results" id="loadResults"></ul>
+        </section>
+
+        <section class="glass panel loop-panel section-gap">
+          <div class="panel-title">Continuous monitoring loop</div>
+          <div class="loop-statement">
+            Review unpublished <strong>KEC</strong> from top → check intervals/docs (B/A, <strong style="color:#fca5a5">red deficiencies</strong>, before videos) → scroll end → refresh → start top. Remain unpublished until publish criteria met. Client publish stays LOCKED here.
+          </div>
+          <div style="margin-top:10px;font-size:.72rem;color:var(--muted)">
+            Loop status: <span id="loopStatus" class="neon-c">IDLE — no pack loaded</span>
+          </div>
+          <div class="progress-bar"><span id="loopProgress" style="width:0%"></span></div>
+        </section>
+
+        <section class="glass panel bridge-panel section-gap">
+          <div class="panel-title">Bridge → NEXUS QA Brain</div>
+          <p style="font-size:.75rem;color:var(--muted);margin-bottom:8px">
+            Photo provenance → scores. Export an evidence pack JSON (no crew, no emails) for Mesh/Brain. Deleted jobs are history only and never exported for scoring.
+          </p>
+          <button class="btn btn-pink" id="btnExportBrain" type="button" disabled>Send evidence pack to QA Brain</button>
+          <pre id="brainPreview" hidden></pre>
+        </section>
+      </aside>
+
+      <main>
+        <div class="tabs-strip" id="tabsStrip"></div>
+        <div class="glass panel job-workspace" id="jobWorkspace"></div>
+      </main>
+    </div>
+
+    <p class="footer-note">
+      NEXUS FIELD OS · KEC-FIELD-MONITOR-v2-runtime · This page contains no job data · Jobs appear only after a pack is loaded ·
+      <span id="footerHonestyMsg">No live MTP session claimed · client publish locked</span>
+    </p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="modal-bg" id="modalBg">
+  <div class="modal glass" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h3 class="font-display neon-g" id="modalTitle">SUMMARY</h3>
+    <div class="summary-body" id="modalBody"></div>
+    <div class="actions-row" style="margin-top:14px">
+      <button class="btn btn-primary" id="modalClose" type="button">Close</button>
+      <button class="btn btn-cyan" id="modalCopy" type="button">Copy text</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ------------------------------------------------------------------
+   * KEC FIELD MONITOR v2 — runtime loading.
+   * This file intentionally embeds NO job data. All jobs come from
+   * PIX live pack JSON loaded at runtime (file picker, drag-and-drop,
+   * or same-origin ?packs=...). Nothing is persisted to storage.
+   * ------------------------------------------------------------------ */
+
+  var TZ = 'America/Chicago';
+  var LEGACY_CUTOFF_MS = Date.parse('2026-09-26T17:13:00Z');
+  var MTP_HOST = 'app.mytechpix.com';            // only host allowed for job links built from pack data
+  var MAX_FILE_BYTES = 5 * 1024 * 1024;
+  var MAX_ITEMS = 2000;
+  var PAGE_SIZE = 8;
+  var ROLE_OK = { before: 1, after: 1, deficiency: 1 };
+  var OUTLINE_ROLE = { blue: 'before', green: 'after', red: 'deficiency' };
+  var PACK_NAME_RE = /^(PIX-LIVE-PACK|LENS-BOUND-PACK)-job-[A-Za-z0-9._-]+\.json$/i;
+  var ID_RE = /^[A-Za-z0-9._-]{1,40}$/;
+  var ZONED_TS_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})$/;
+  var DATE_RE = /^(\d{4})-(\d{2})-(\d{2})/;
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  /* Privacy scrub: emails and labelled person names never render. (\x40 is the at-sign.) */
+  var EMAIL_RE = /[A-Za-z0-9._%+\-]+\x40[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/g;
+  var AT_RE = /\x40/g;
+  var PERSON_LABEL_RE = /\b(crew|crews|technicians?|techs?|driver|foreman|supervisor|deleted\s*by|uploaded\s*by|by\s+user)\b\s*[:=]\s*[^\n;|)]*/gi;
+
+  function scrub(s) {
+    return String(s == null ? '' : s)
+      .replace(EMAIL_RE, '[email hidden]')
+      .replace(PERSON_LABEL_RE, '[name hidden]')
+      .replace(AT_RE, ' ');
+  }
+  function P(v, max) {           // pack string -> safe display string
+    if (v == null) return '';
+    if (typeof v !== 'string' && typeof v !== 'number') return '';
+    var s = scrub(String(v)).replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
+    max = max || 200;
+    return s.length > max ? s.slice(0, max - 1) + '…' : s;
+  }
+  function isObj(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
+  function nonEmpty(v) {
+    if (v == null) return false;
+    if (typeof v === 'string') return v.trim().length > 0;
+    if (Array.isArray(v)) return v.length > 0;
+    if (typeof v === 'object') return Object.keys(v).length > 0;
+    return v === true;
+  }
+
+  /* ---------- DOM helper: every string becomes a text node (no HTML-string injection of pack text) ---------- */
+  function h(tag, props, kids) {
+    var el = document.createElement(tag);
+    if (props) {
+      Object.keys(props).forEach(function (k) {
+        var v = props[k];
+        if (v == null || v === false) return;
+        if (k === 'class') el.className = v;
+        else if (k === 'text') el.textContent = String(v);
+        else if (k.slice(0, 2) === 'on' && typeof v === 'function') el.addEventListener(k.slice(2), v);
+        else el.setAttribute(k, v === true ? '' : String(v));
+      });
+    }
+    append(el, kids);
+    return el;
+  }
+  function append(el, kids) {
+    if (kids == null || kids === false) return;
+    if (!Array.isArray(kids)) kids = [kids];
+    kids.forEach(function (c) {
+      if (c == null || c === false) return;
+      if (Array.isArray(c)) append(el, c);
+      else if (typeof c === 'object' && c.nodeType) el.appendChild(c);
+      else el.appendChild(document.createTextNode(String(c)));
+    });
+  }
+  function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
+  function $(id) { return document.getElementById(id); }
+
+  /* ---------- Time (always America/Chicago, never browser-local) ---------- */
+  var fmtTime = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit', hour12: true });
+  var fmtDay = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', month: 'numeric', day: 'numeric' });
+  function norm(s) { return s.replace(/[\u202f\u00a0]/g, ' '); }
+  function tCT(ms) { return ms == null ? 'time n/a' : norm(fmtTime.format(new Date(ms))) + ' CT'; }
+  function dCT(ms) { return ms == null ? '' : norm(fmtDay.format(new Date(ms))); }
+  function dtCT(ms) { return ms == null ? 'time n/a' : dCT(ms) + ' · ' + tCT(ms); }
+  function parseZoned(v) {
+    if (typeof v !== 'string' || !ZONED_TS_RE.test(v.trim())) return null;
+    var ms = Date.parse(v.trim());
+    return isFinite(ms) ? ms : null;
+  }
+  function dateLabel(v) {
+    var m = typeof v === 'string' ? DATE_RE.exec(v) : null;
+    if (!m) return '';
+    var mo = parseInt(m[2], 10), d = parseInt(m[3], 10);
+    if (mo < 1 || mo > 12 || d < 1 || d > 31) return '';
+    return MONTHS[mo - 1] + ' ' + d + ', ' + m[1];
+  }
+  function mdLabel(v) {
+    var m = typeof v === 'string' ? DATE_RE.exec(v) : null;
+    if (!m) return '';
+    return parseInt(m[2], 10) + '/' + parseInt(m[3], 10);
+  }
+
+  /* ---------- Link validation (links are built only from loaded pack data) ---------- */
+  function safeMtpUrl(v, jobId) {
+    if (typeof v !== 'string') return null;
+    try {
+      var u = new URL(v);
+      if (u.protocol !== 'https:' || u.hostname !== MTP_HOST || u.username || u.password || u.port) return null;
+      if (!/^\/kec\/[A-Za-z0-9-]+\/jobs\/[A-Za-z0-9-]+\/?$/.test(u.pathname)) return null;
+      var last = u.pathname.replace(/\/$/, '').split('/').pop();
+      if (jobId != null && last !== String(jobId)) return null;
+      return u.origin + u.pathname;
+    } catch (e) { return null; }
+  }
+  function safeRelHref(v, jobId, baseOrigin) {
+    if (typeof v !== 'string' || !baseOrigin) return null;
+    if (!/^\/kec\/[A-Za-z0-9-]+\/jobs\/[A-Za-z0-9-]+\/?$/.test(v)) return null;
+    return safeMtpUrl(baseOrigin + v, jobId);
+  }
+
+  /* ---------- State (memory only) ---------- */
+  var state = {
+    jobs: [],            // normalized jobs from packs
+    listRows: {},        // jobId -> row from unpublished lists
+    openTabs: [],
+    activeTab: null,
+    page: 1,
+    showAllTypes: false,
+    refreshCount: 0,
+    results: [],
+    queryUrls: [],
+    hiddenHistoryLists: {}, // jobId -> true when a deleted/history-only pack carried a queue list (rows never kept)
+    ops: {}              // jobId -> { beforeMark, notes, operatorUrl } (memory only)
+  };
+  function ops(id) { if (!state.ops[id]) state.ops[id] = { beforeMark: false, notes: '', operatorUrl: '' }; return state.ops[id]; }
+  function getJob(id) { for (var i = 0; i < state.jobs.length; i++) if (state.jobs[i].id === id) return state.jobs[i]; return null; }
+
+  /* ---------- Pack normalization = privacy + validation boundary ---------- */
+  function flagType(f) { return typeof f === 'string' ? f : (isObj(f) && typeof f.type === 'string' ? f.type : ''); }
+
+  function normalizeList(rows, src) {
+    var out = [];
+    if (!Array.isArray(rows)) return out;
+    rows.slice(0, 500).forEach(function (r) {
+      if (!isObj(r)) return;
+      var id = r.jobId != null ? String(r.jobId) : '';
+      if (!ID_RE.test(id)) return;
+      out.push({
+        id: id,
+        date: P(r.date, 20),
+        location: P(r.location, 120) || '(no location)',
+        type: P(r.type, 80),
+        status: P(r.status, 40),
+        images: typeof r.images === 'number' && isFinite(r.images) ? r.images : null,
+        href: src && !src.deleted ? safeRelHref(r.href, id, src.linkOrigin) : null,
+        srcId: src ? src.id : null,
+        srcCapturedMs: src ? src.capturedMs : null
+      });
+    });
+    return out;
+  }
+
+  function requireRows(arr) {
+    var rows = normalizeList(arr, null);
+    if (!rows.length) {
+      var n = Array.isArray(arr) ? arr.length : 0;
+      var objs = Array.isArray(arr) ? arr.filter(isObj).length : 0;
+      throw new Error('No valid jobs or list rows: ' + (n === 0 ? 'the list is empty.' :
+        n + ' entr' + (n === 1 ? 'y' : 'ies') + ', ' + (objs ? objs + ' object(s) but none with a valid jobId.' : 'none are objects.')) +
+        ' Expected a PIX live pack object or an unpublished list of {jobId, ...} rows.');
+    }
+    return rows;
+  }
+
+  function normalizePack(raw, name) {
+    var warnings = [];
+    if (Array.isArray(raw)) return { kind: 'list', rows: requireRows(raw), warnings: warnings };
+    if (!isObj(raw)) throw new Error('Top level must be a JSON object (PIX live pack) or an array (unpublished list).');
+    if (raw.jobId == null) {
+      if (Array.isArray(raw.unpublishedJobIndex) || Array.isArray(raw.jobs)) {
+        return { kind: 'list', rows: requireRows(raw.unpublishedJobIndex || raw.jobs), warnings: warnings };
+      }
+      throw new Error('Not a PIX live pack: missing "jobId" (and no unpublished list found).');
+    }
+    if (typeof raw.jobId !== 'string' && typeof raw.jobId !== 'number') throw new Error('"jobId" must be a string or number.');
+    var id = String(raw.jobId).trim();
+    if (!ID_RE.test(id)) throw new Error('"jobId" has unexpected characters or length.');
+    if (raw.media !== undefined && !Array.isArray(raw.media)) throw new Error('"media" must be an array.');
+    if (name && !PACK_NAME_RE.test(name)) warnings.push('File name does not match PIX-LIVE-PACK-job-*.json (loaded anyway).');
+
+    // Lens bound packs keep non-enum flags in extensionFlags; both lists are read.
+    var flagsRaw = (Array.isArray(raw.flags) ? raw.flags : []).concat(Array.isArray(raw.extensionFlags) ? raw.extensionFlags : []);
+    if (raw.flags !== undefined && !Array.isArray(raw.flags)) warnings.push('"flags" is not an array; ignored.');
+    if (raw.extensionFlags !== undefined && !Array.isArray(raw.extensionFlags)) warnings.push('"extensionFlags" is not an array; ignored.');
+    if (raw.resolvedFlags !== undefined && !Array.isArray(raw.resolvedFlags)) warnings.push('"resolvedFlags" is not an array; ignored.');
+    // A flag counts only if it is not marked resolved, either inline ({status:'resolved'} / {resolved:true})
+    // or by a matching entry in resolvedFlags.
+    var resolvedRaw = Array.isArray(raw.resolvedFlags) ? raw.resolvedFlags : [];
+    function inlineResolved(f) { return isObj(f) && (f.resolved === true || (typeof f.status === 'string' && /^\s*resolved\s*$/i.test(f.status))); }
+    var resolvedTypes = resolvedRaw.map(flagType).filter(Boolean);
+    var inlineRes = flagsRaw.filter(inlineResolved);
+    flagsRaw = flagsRaw.filter(function (f) { var t = flagType(f); return t && !inlineResolved(f) && resolvedTypes.indexOf(t) < 0; });
+    var flagTypes = flagsRaw.map(flagType);
+    var resolvedFlags = [];
+    resolvedRaw.concat(inlineRes).slice(0, 20).forEach(function (f) {
+      var t = flagType(f); if (!t) return;
+      resolvedFlags.push({ type: P(t, 60), note: isObj(f) ? P(f.resolution || f.note, 300) : '', atMs: isObj(f) ? parseZoned(f.resolvedAt) : null });
+    });
+    var deleted = flagTypes.indexOf('job_deleted_in_mtp') >= 0 || raw.job_deleted_in_mtp === true ||
+      (typeof raw.mtpStatus === 'string' && /^\s*deleted\s*$/i.test(raw.mtpStatus));
+
+    var linkUrl = deleted ? null : safeMtpUrl(raw.mtpUrl, id);
+    if (!deleted && raw.mtpUrl != null && !linkUrl) warnings.push('mtpUrl failed validation; no job link shown.');
+
+    var capturedMs = parseZoned(raw.capturedAt) || parseZoned(raw.captureTs) || parseZoned(raw.capturedAtUtc) || null;
+    var packBasis = typeof raw.timestampBasis === 'string' ? raw.timestampBasis : '';
+
+    var media = [];
+    var skipped = 0, noZone = 0;
+    var src = Array.isArray(raw.media) ? raw.media : [];
+    if (raw.media === undefined) warnings.push('Pack has no "media" array; showing 0 items.');
+    if (src.length > MAX_ITEMS) warnings.push('Only the first ' + MAX_ITEMS + ' media items are shown.');
+    var basisLegacy = /legacy/i.test(packBasis), basisReRead = /re-?read/i.test(packBasis), itemsReRead = src.length > 0;
+    src.slice(0, MAX_ITEMS).forEach(function (m, i) {
+      if (!isObj(m)) { skipped++; return; }
+      var role = String(m.role || m.kind || '').toLowerCase();
+      if (!ROLE_OK[role]) role = OUTLINE_ROLE[String(m.outline || '').toLowerCase()] || '';
+      if (!ROLE_OK[role]) { skipped++; return; }
+      var tsRaw = typeof m.timestamp === 'string' ? m.timestamp : (typeof m.ts === 'string' ? m.ts : '');
+      var tsMs = parseZoned(tsRaw);
+      if (tsMs == null) noZone++;
+      var mt = String(m.mediaType || m.type || '').toLowerCase();
+      if (mt === 'image') mt = 'photo';
+      if (mt !== 'photo' && mt !== 'video') mt = 'unverified';
+      var basis = typeof m.timestampBasis === 'string' ? m.timestampBasis : '';
+      if (/legacy/i.test(basis)) basisLegacy = true;
+      if (!/re-?read/i.test(basis)) itemsReRead = false;
+      var cap = P(m.captionRaw, 60);
+      var imgNo = /^IMG\s*(\d+)/i.exec(cap);
+      media.push({
+        idx: i,
+        id: P(m.id, 60),
+        kind: role,
+        label: P(m.mtpTemplateLabel || m.slot || m.label, 200) || '(no label in pack)',
+        caption: cap,
+        imgNo: imgNo ? imgNo[1] : String(i + 1),
+        tsMs: tsMs,
+        tsRawBad: tsMs == null ? (tsRaw ? 'no zone / unparsed' : 'missing') : '',
+        mediaType: mt,
+        techNote: P(m.techNote, 200)
+      });
+    });
+    if (skipped) warnings.push(skipped + ' media item(s) skipped (not an object or unknown role/outline).');
+    if (noZone) warnings.push(noZone + ' item(s) lack a zoned UTC timestamp; shown as "time n/a" and left out of gaps.');
+
+    var legacy = false, legacyWhy = '';
+    if (basisLegacy) { legacy = true; legacyWhy = 'pack timestampBasis says legacy'; }
+    else if (capturedMs != null && capturedMs < LEGACY_CUTOFF_MS && !basisReRead && !itemsReRead && parseZoned(raw.reReadAt) == null) {
+      legacy = true; legacyWhy = 'captured before 12:13 PM CT 9/26 (browser zone fix) and not re-read';
+    }
+
+    // Active flags, grouped: same type + same note shown once with ×N and any slotIds.
+    var flags = [], groups = {};
+    flagsRaw.slice(0, 200).forEach(function (f) {
+      var t = flagType(f);
+      if (!t || t === 'job_deleted_in_mtp') return;
+      var note = isObj(f) ? P(f.note, 300) : '';
+      if (!note && isObj(f) && typeof f.count === 'number' && isFinite(f.count)) note = 'count ' + f.count;
+      var key = t + '|' + note;
+      if (!groups[key]) { groups[key] = { type: P(t, 60), note: note, n: 0, slots: [] }; flags.push(groups[key]); }
+      groups[key].n++;
+      if (isObj(f) && typeof f.slotId === 'string' && groups[key].slots.length < 40) groups[key].slots.push(P(f.slotId, 60));
+    });
+    flags = flags.slice(0, 50).map(function (g) {
+      var extra = (g.n > 1 ? '×' + g.n + ' ' : '') + (g.slots.length ? g.slots.join(', ') : '');
+      return { type: g.type, note: extra ? extra + (g.note ? ' — ' + g.note : '') : g.note };
+    });
+
+    var pc = isObj(raw.counts) ? raw.counts : {};
+    function num(v) { return typeof v === 'number' && isFinite(v) ? v : null; }
+
+    var locRaw = raw.location || raw.mtpTitle;
+    var job = {
+      id: id,
+      location: P(locRaw, 120) || '(no location in pack)',
+      title: P(raw.mtpTitle, 120),
+      type: P(raw.jobType || raw.type, 80) || '(type n/a)',
+      dateLabel: dateLabel(raw.jobDate || raw.date) || P(raw.jobDate || raw.date, 20) || 'date n/a',
+      dateIso: typeof (raw.jobDate || raw.date) === 'string' ? String(raw.jobDate || raw.date).slice(0, 10) : '',
+      status: P(raw.status, 40),
+      mtpStatus: P(raw.mtpStatus, 40),
+      deleted: deleted,
+      deletedMD: deleted ? mdLabel(raw.deletedOn || raw.deletedAt) : '',
+      linkUrl: linkUrl,
+      techHint: nonEmpty(raw.technician) || nonEmpty(raw.technicianHint) || nonEmpty(raw.tech) || nonEmpty(raw.crew) ||
+        (typeof raw.statusNotesPreview === 'string' && /\b(crew|tech)/i.test(raw.statusNotesPreview)) ||
+        (typeof raw.technicianStatus === 'string' && /seen on mtp/i.test(raw.technicianStatus)),
+      capturedMs: capturedMs,
+      legacy: legacy,
+      legacyWhy: legacyWhy,
+      timeConflict: flagTypes.indexOf('caption_time_changed_between_reads') >= 0,
+      timeResolved: flagTypes.indexOf('caption_time_changed_between_reads') < 0 && resolvedFlags.some(function (f) { return f.type === 'caption_time_changed_between_reads'; }),
+      resolvedFlags: resolvedFlags,
+      packBasis: P(packBasis, 80),
+      revision: P(typeof raw.revision === 'string' ? raw.revision.split(/[\s:]/)[0] : '', 12),
+      nonHood: flagTypes.indexOf('non_hood_scope') >= 0,
+      dfwa: [raw.location, raw.mtpTitle, raw.jobName, raw.fileName].some(function (s) { return typeof s === 'string' && /^\s*DFWA/i.test(s); }),
+      media: media,
+      flags: flags,
+      packCounts: { photos: num(pc.photos), videos: num(pc.videos), before: num(pc.before), after: num(pc.after), deficiency: num(pc.deficiency) },
+      packBeforeComplete: raw.beforeCompleteCheckpoint === true,
+      packPublishEligible: raw.publishEligible === true,
+      honesty: P(raw.honesty, 400),
+      warnings: warnings
+    };
+    var listSrc = { id: id, deleted: deleted, linkOrigin: linkUrl ? 'https://' + MTP_HOST : null, capturedMs: capturedMs };
+    // A queue list inside a deleted/history-only pack never renders: rows are discarded here, only a flag is kept.
+    var hasList = Array.isArray(raw.unpublishedJobIndex) && raw.unpublishedJobIndex.length > 0;
+    return { kind: 'job', job: job, rows: deleted ? [] : normalizeList(raw.unpublishedJobIndex, listSrc), historyListHidden: deleted && hasList, warnings: warnings };
+  }
+
+  /* ---------- Derived metrics ---------- */
+  function counts(job) {
+    var c = { before: 0, after: 0, deficiency: 0, photo: 0, video: 0, unverified: 0 };
+    job.media.forEach(function (m) { c[m.kind]++; c[m.mediaType]++; });
+    return c;
+  }
+  function timed(job) { return job.media.filter(function (m) { return m.tsMs != null; }).sort(function (a, b) { return a.tsMs - b.tsMs || a.idx - b.idx; }); }
+  function gaps(job) {
+    var s = timed(job), out = [];
+    for (var i = 1; i < s.length; i++) out.push({ from: s[i - 1], to: s[i], mins: Math.round((s[i].tsMs - s[i - 1].tsMs) / 60000) });
+    return out;
+  }
+  function span(job) {
+    var s = timed(job);
+    if (!s.length) return null;
+    return { first: s[0].tsMs, last: s[s.length - 1].tsMs, mins: Math.round((s[s.length - 1].tsMs - s[0].tsMs) / 60000) };
+  }
+  function medianDurationStub(job) {
+    var b = job.media.filter(function (m) { return m.kind === 'before' && m.tsMs != null; }).map(function (m) { return m.tsMs; });
+    var a = job.media.filter(function (m) { return m.kind === 'after' && m.tsMs != null; }).map(function (m) { return m.tsMs; });
+    if (!b.length || !a.length) return null;
+    return Math.round((Math.max.apply(null, a) - Math.min.apply(null, b)) / 60000);
+  }
+  function beforeComplete(job) { return job.packBeforeComplete || (!job.deleted && ops(job.id).beforeMark); }
+  function criteriaMet(job) {       // v1 criteria, display only — the gate itself is always LOCKED
+    if (job.deleted) return false;
+    var c = counts(job);
+    return c.before > 0 && c.after > 0 && beforeComplete(job) && c.after >= Math.min(c.before, 5);
+  }
+  function jobStatus(job) {
+    var c = counts(job);
+    if (job.deleted) return { cls: 'st-deleted', label: 'DELETED · HISTORY' };
+    if (c.deficiency > 0) return { cls: 'st-def', label: 'DEFICIENCY' };
+    if (criteriaMet(job)) return { cls: 'st-eligible', label: 'CRITERIA MET · LOCKED' };
+    if (beforeComplete(job)) return { cls: 'st-checkpoint', label: 'MID-JOB ✓' };
+    if (c.before > 0) return { cls: 'st-before', label: 'BEFORE IN PROGRESS' };
+    if (c.after > 0) return { cls: 'st-nobefore', label: 'AFTER ONLY · NO BEFORE' };
+    return { cls: 'st-watching', label: 'WATCHING' };
+  }
+
+  /* ---------- Before/after video rule (informational, pack labels + mediaType only) ---------- */
+  var VIDEO_RULES = [
+    { key: 'walk', name: 'Kitchen walkthrough video', test: function (l) { return /walk\s*-?\s*through/i.test(l); }, dfwaOnly: false },
+    { key: 'fan', name: 'Fan running video', test: function (l) { return /\bfan\b/i.test(l) && /\brunning\b/i.test(l) && !/\bbelt\b/i.test(l); }, dfwaOnly: false },
+    { key: 'belt', name: 'Fan belt video (DFWA only)', test: function (l) { return /\bbelt\b/i.test(l); }, dfwaOnly: true }
+  ];
+  function videoCell(job, rule, phase) {
+    if (rule.dfwaOnly && !job.dfwa) return { cls: 'vr-na', text: 'N/A — job name not DFWA' };
+    var items = job.media.filter(function (m) { return m.kind === phase && rule.test(m.label); });
+    if (items.some(function (m) { return m.mediaType === 'video'; })) return { cls: 'vr-ok', text: 'VIDEO SEEN (type only; content unverified)', seen: true };
+    if (items.some(function (m) { return m.mediaType === 'unverified'; })) return { cls: 'vr-warn', text: 'ITEM FOUND · TYPE UNVERIFIED' };
+    if (items.length) return { cls: 'vr-bad', text: 'PHOTO ONLY — NOT A VIDEO' };
+    return { cls: 'vr-bad', text: 'NOT IN PACK' };
+  }
+  function beforeVideosMissing(job) {
+    return VIDEO_RULES.some(function (r) {
+      if (r.dfwaOnly && !job.dfwa) return false;
+      return !videoCell(job, r, 'before').seen;
+    });
+  }
+
+  /* ---------- UI helpers ---------- */
+  function toast(msg) {
+    var el = $('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.classList.remove('show'); }, 2800);
+  }
+  function setLoop(parts, pct) {
+    var el = $('loopStatus');
+    clear(el);
+    append(el, parts);
+    if (pct != null) $('loopProgress').style.width = Math.max(0, Math.min(100, pct)) + '%';
+  }
+  function techChip(job) {
+    return job.techHint
+      ? h('span', { class: 'chip demo', title: 'Pack carries a technician hint; name intentionally not shown' }, 'TECH · SEEN ON MTP, UNCONFIRMED')
+      : h('span', { class: 'chip hist' }, 'TECH · UNKNOWN');
+  }
+  function deletedChips(job) {
+    if (!job.deleted) return null;
+    return [
+      h('span', { class: 'chip deleted' }, 'DELETED IN MTP' + (job.deletedMD ? ' ' + job.deletedMD : ' (date n/a)')),
+      h('span', { class: 'chip hist' }, 'HISTORY ONLY • NO SCORE')
+    ];
+  }
+  function dateNode(job, big) {
+    if (job.deleted) return h('span', { class: 'date-plain', title: 'Job link stripped — deleted in MTP' }, job.dateLabel);
+    if (job.linkUrl) return h('a', { class: 'date-link', href: job.linkUrl, target: '_blank', rel: 'noopener noreferrer', 'data-stop': '1' }, job.dateLabel);
+    return h('span', { class: 'date-plain', title: big ? 'No valid job link in pack' : null }, job.dateLabel);
+  }
+
+  /* ---------- Header chips (honesty gate) ---------- */
+  function renderHeaderChips() {
+    var dataChip = $('chipDataMode');
+    var n = state.jobs.length;
+    if (n) {
+      dataChip.className = 'chip live-data';
+      dataChip.textContent = 'RUNTIME PACK DATA · ' + n + ' JOB' + (n === 1 ? '' : 'S');
+      dataChip.title = 'Loaded from PIX live pack file(s) in this browser tab only';
+    } else {
+      dataChip.className = 'chip demo';
+      dataChip.textContent = 'NO PACK LOADED';
+      dataChip.title = 'The page ships with no job data';
+    }
+    // A pack file is not a session: session chip never claims live auth.
+    $('chipSession').textContent = 'NO LIVE MTP SESSION';
+    $('footerHonestyMsg').textContent = n
+      ? 'Pack data loaded at runtime (not a live session) · client publish locked'
+      : 'No live MTP session claimed · client publish locked';
+  }
+
+  /* ---------- Queue ---------- */
+  function queueEntries() {
+    var jobs = state.jobs.slice().sort(function (a, b) {
+      if (a.deleted !== b.deleted) return a.deleted ? 1 : -1;
+      return (b.dateIso || '').localeCompare(a.dateIso || '');
+    });
+    var known = {};
+    state.jobs.forEach(function (j) { known[j.id] = 1; });
+    var rows = [], hidden = 0;
+    Object.keys(state.listRows).forEach(function (k) {
+      var r = state.listRows[k];
+      if (known[r.id]) return;
+      if (!state.showAllTypes && !/^KEC/i.test(r.type)) { hidden++; return; }
+      rows.push(r);
+    });
+    return { items: jobs.map(function (j) { return { job: j }; }).concat(rows.map(function (r) { return { row: r }; })), hidden: hidden };
+  }
+
+  function historyNote() {
+    if (!Object.keys(state.hiddenHistoryLists).length) return null;
+    return h('div', { class: 'history-hidden-note', id: 'historyListNote', style: 'font-size:.68rem;color:var(--muted);padding:4px 2px' }, 'Queue list from a history-only pack hidden');
+  }
+
+  function renderQueue() {
+    var list = $('queueList');
+    clear(list);
+    var q = queueEntries();
+    var pages = Math.max(1, Math.ceil(q.items.length / PAGE_SIZE));
+    if (state.page > pages) state.page = pages;
+    $('pageNum').textContent = String(state.page) + ' / ' + pages;
+    $('btnAllTypes').textContent = state.showAllTypes ? 'KEC list rows only' : 'Show all list types';
+    if (!q.items.length) {
+      append(list, h('div', { style: 'font-size:.78rem;color:var(--muted);padding:12px' }, [
+        h('strong', { style: 'color:var(--text)' }, 'No pack loaded.'),
+        ' Use LOAD PACKS, drag a PIX-LIVE-PACK-job-*.json file onto the page, or open with ?packs=… (same-origin).',
+        q.hidden ? h('div', { style: 'margin-top:6px' }, q.hidden + ' non-KEC list row(s) hidden.') : null,
+        historyNote()
+      ]));
+      return;
+    }
+    var start = (state.page - 1) * PAGE_SIZE;
+    q.items.slice(start, start + PAGE_SIZE).forEach(function (it) {
+      if (it.job) {
+        var job = it.job, c = counts(job), st = jobStatus(job), open = state.openTabs.indexOf(job.id) >= 0;
+        append(list, h('div', { class: 'job-card' + (state.activeTab === job.id ? ' active' : '') + (job.deleted ? ' is-deleted' : ''), 'data-id': job.id, tabindex: '0', role: 'button' }, [
+          h('div', { class: 'row1' }, [
+            h('div', null, [
+              h('div', { class: 'loc' }, job.location),
+              h('div', { class: 'meta' }, [job.type + ' · ', h('span', { class: 'chip live-session', style: 'padding:1px 6px' }, 'PACK')])
+            ]),
+            h('span', { class: 'status-pill ' + st.cls }, st.label)
+          ]),
+          job.deleted ? h('div', { class: 'counts' }, deletedChips(job)) : null,
+          h('div', { class: 'meta' }, [job.deleted ? 'Date (link stripped): ' : (job.linkUrl ? 'Date (job link): ' : 'Date: '), dateNode(job)]),
+          h('div', { class: 'counts' }, [
+            h('span', { class: 'count-chip b' }, 'B ' + c.before),
+            h('span', { class: 'count-chip a' }, 'A ' + c.after),
+            h('span', { class: 'count-chip d' }, 'RED ' + c.deficiency),
+            h('span', { class: 'count-chip p' }, 'PH ' + c.photo),
+            h('span', { class: 'count-chip v' }, 'VID ' + c.video),
+            job.deleted ? h('span', { class: 'state-dot deleted', 'data-state': 'deleted' }, '● DELETED')
+              : (open ? h('span', { class: 'state-dot open', 'data-state': 'open' }, '● OPEN') : null)
+          ])
+        ]));
+      } else {
+        var r = it.row;
+        append(list, h('div', { class: 'job-card list-row', 'data-row': r.id }, [
+          h('div', { class: 'row1' }, [
+            h('div', null, [
+              h('div', { class: 'loc' }, r.location),
+              h('div', { class: 'meta' }, [(r.type || 'type n/a') + ' · ', h('span', { class: 'chip demo', style: 'padding:1px 6px' }, 'LIST ROW · NO PACK')])
+            ]),
+            h('span', { class: 'status-pill st-watching' }, r.status || 'LISTED')
+          ]),
+          h('div', { class: 'meta' }, [
+            'Date: ',
+            r.href ? h('a', { class: 'date-link', href: r.href, target: '_blank', rel: 'noopener noreferrer', 'data-stop': '1' }, r.date || 'n/a') : h('span', { class: 'date-plain' }, r.date || 'n/a'),
+            r.images != null ? ' · ' + r.images + ' item(s) on list' : '',
+          ])
+        ]));
+      }
+    });
+    if (q.hidden) append(list, h('div', { style: 'font-size:.68rem;color:var(--muted);padding:4px 2px' }, q.hidden + ' non-KEC list row(s) hidden.'));
+    append(list, historyNote());
+  }
+
+  /* ---------- Tabs ---------- */
+  function renderTabs() {
+    var strip = $('tabsStrip');
+    clear(strip);
+    state.openTabs.forEach(function (id) {
+      var job = getJob(id);
+      if (!job) return;
+      var st = jobStatus(job);
+      append(strip, h('div', { class: 'tab' + (state.activeTab === id ? ' active' : ''), 'data-tab': id }, [
+        h('span', { class: 'status-pill ' + st.cls, style: 'font-size:.55rem' }, st.label),
+        h('span', { class: 'tab-name' }, job.location),
+        h('button', { class: 'close-tab', 'data-close': id, type: 'button', title: 'Close tab', 'aria-label': 'Close tab' }, '×')
+      ]));
+    });
+  }
+  function openJob(id) {
+    if (!getJob(id)) return;
+    if (state.openTabs.indexOf(id) < 0) state.openTabs.push(id);
+    state.activeTab = id;
+    setLoop([h('span', { class: 'neon-c' }, 'MONITORING'), ' — reviewing open tabs'], Math.min(100, state.openTabs.length * 25));
+    renderAll();
+  }
+  function closeTab(id) {
+    state.openTabs = state.openTabs.filter(function (t) { return t !== id; });
+    if (state.activeTab === id) state.activeTab = state.openTabs[0] || null;
+    renderAll();
+  }
+
+  /* ---------- Empty state / loader ---------- */
+  function emptyWorkspace(ws) {
+    if (!state.jobs.length) {
+      append(ws, h('div', { class: 'empty-state', id: 'emptyState' }, [
+        h('div', { class: 'big font-display' }, 'No pack loaded'),
+        h('div', null, 'This page ships with no job data. Jobs appear only after you load a PIX live pack.'),
+        h('div', { class: 'dropzone', id: 'dropzone' }, [
+          h('div', { style: 'font-weight:600' }, 'Drop PIX-LIVE-PACK-job-*.json here'),
+          h('div', { class: 'hint' }, 'One or more files. An unpublished-list JSON is optional.'),
+          h('div', { class: 'actions-row', style: 'justify-content:center' }, [
+            h('button', { class: 'btn btn-cyan', type: 'button', id: 'btnLoadPacks3' }, 'Choose pack files…')
+          ]),
+          h('div', { class: 'hint' }, ['Or serve this page over http(s) and open it with ', h('code', { class: 'k' }, '?packs=packs/a.json,packs/b.json'), ' (same-origin relative paths only).'])
+        ])
+      ]));
+      $('btnLoadPacks3').addEventListener('click', pickFiles);
+      return;
+    }
+    append(ws, h('div', { class: 'empty-state' }, [
+      'Open one or more loaded jobs from the queue to monitor side-by-side.',
+      h('br'),
+      h('span', { style: 'font-size:.75rem' }, 'Multi-tab metaphor in ONE UI — no extra browser tabs required.')
+    ]));
+  }
+
+  /* ---------- Workspace ---------- */
+  function renderWorkspace() {
+    var ws = $('jobWorkspace');
+    var exportBtn = $('btnExportBrain');
+    clear(ws);
+    ws.classList.remove('job-deleted');
+    var job = state.activeTab ? getJob(state.activeTab) : null;
+    if (!job) {
+      exportBtn.disabled = true;
+      exportBtn.textContent = 'Send evidence pack to QA Brain';
+      emptyWorkspace(ws);
+      return;
+    }
+    var o = ops(job.id);
+    if (job.deleted) ws.classList.add('job-deleted');
+    exportBtn.disabled = job.deleted;
+    exportBtn.textContent = job.deleted ? 'History only — no score export' : 'Send evidence pack to QA Brain';
+
+    var c = counts(job), st = jobStatus(job), gapList = gaps(job), med = medianDurationStub(job), sp = span(job);
+    var maxGap = gapList.reduce(function (m, g) { return Math.max(m, g.mins); }, 0);
+    var hotGaps = gapList.filter(function (g) { return g.mins >= 40; });
+    var bc = beforeComplete(job);
+
+    // Sticky chips
+    append(ws, h('div', { class: 'sticky-chips', id: 'jobChips' }, [
+      h('span', { class: 'chip live-session' }, 'RUNTIME PACK'),
+      deletedChips(job),
+      h('span', { class: 'status-pill ' + st.cls }, st.label),
+      h('span', { class: 'count-chip b' }, 'Before ' + c.before),
+      h('span', { class: 'count-chip a' }, 'After ' + c.after),
+      h('span', { class: 'count-chip d' }, 'Deficiency ' + c.deficiency),
+      h('span', { class: 'count-chip p', id: 'cntPhotos' }, 'Photos ' + c.photo),
+      h('span', { class: 'count-chip v', id: 'cntVideos' }, 'Videos ' + c.video),
+      c.unverified ? h('span', { class: 'count-chip p' }, 'Type unverified ' + c.unverified) : null,
+      job.legacy ? h('span', { class: 'chip legacy', title: job.legacyWhy }, 'LEGACY TIME') : null,
+      job.timeConflict ? h('span', { class: 'chip legacy', title: 'Pack flag: caption time changed between reads' }, 'TIME CONFLICT (PACK FLAG)') : null,
+      job.timeResolved ? h('span', { class: 'chip verified', id: 'timeVerifiedChip', title: 'Pack resolvedFlags: caption time settled' }, 'TIME VERIFIED (CT)') : null,
+      techChip(job),
+      med != null ? h('span', { class: 'chip' }, 'Duration ~' + med + ' min') : null,
+      maxGap ? h('span', { class: 'chip' + (maxGap >= 40 ? ' live-warn' : '') }, 'Max gap ' + maxGap + ' min') : null,
+      h('span', { class: 'chip locked' }, job.deleted ? 'PUBLISH GATE OFF' : 'PUBLISH LOCKED')
+    ]));
+
+    // Title row
+    append(ws, h('div', { style: 'display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin-bottom:8px' }, [
+      h('div', { style: 'min-width:0' }, [
+        h('div', { class: 'font-display', style: 'font-size:1.05rem', id: 'jobTitle' }, job.location),
+        h('div', { style: 'font-size:.75rem;color:var(--muted)' },
+          'Job ' + job.id + ' · ' + job.type + (job.status ? ' · list status ' + job.status : '') + (job.mtpStatus ? ' · MTP status ' + job.mtpStatus : '') +
+          (job.capturedMs != null ? ' · captured ' + dtCT(job.capturedMs) : ' · capture time not in pack') + (job.revision ? ' · pack ' + job.revision : '') + (job.packBasis ? ' · time basis ' + job.packBasis : ''))
+      ]),
+      h('div', { style: 'text-align:right' }, [
+        dateNode(job, true),
+        h('div', { style: 'font-size:.65rem;color:var(--muted)' },
+          job.deleted ? 'Job link stripped — deleted in MTP' : (job.linkUrl ? 'Date = clickable MTP job link (from pack)' : 'No valid job link in pack'))
+      ])
+    ]));
+
+    // Banners
+    if (job.deleted) {
+      append(ws, h('div', { class: 'banner crit', id: 'deletedBanner' }, h('span', null, [
+        h('strong', null, 'DELETED IN MTP' + (job.deletedMD ? ' ' + job.deletedMD : '') + ' — HISTORY ONLY • NO SCORE. '),
+        'No job link, nothing to restore, publish gate permanently off. Shown for history review only.'
+      ])));
+    }
+    if (c.deficiency > 0) append(ws, h('div', { class: 'banner crit' }, h('span', null, '⚠ ' + c.deficiency + ' RED deficiency media — review notes before publish')));
+    if (!job.deleted) {
+      if (!bc && c.before > 0) {
+        append(ws, h('div', { class: 'banner warn' }, [
+          h('span', null, ['Mid-job checkpoint: update halfway after ', h('strong', null, 'all before'), ' pics/vids are taken.']),
+          h('button', { class: 'btn btn-yellow', type: 'button', 'data-act': 'checkpoint' }, 'Mark before-complete (local)')
+        ]));
+      } else if (bc && !criteriaMet(job)) {
+        append(ws, h('div', { class: 'banner info' }, h('span', null, '✓ Before-complete checkpoint set' + (job.packBeforeComplete ? ' (pack)' : ' (operator, this session)') + '. Waiting for after media…')));
+      }
+      if (c.before === 0 && c.after > 0) append(ws, h('div', { class: 'banner warn' }, h('span', null, 'No before (blue) media in pack — before-complete checkpoint not possible from this pack.')));
+      if (criteriaMet(job)) append(ws, h('div', { class: 'banner ok' }, h('span', null, '✓ Before AND after present — criteria met. Client publish stays LOCKED here; publish only inside MTP after human review.')));
+      if (beforeVideosMissing(job)) {
+        append(ws, h('div', { class: 'banner warn', id: 'videoBanner' }, h('span', null,
+          'Before-video rule: required before video(s) not seen in this pack (see Video checks). Informational — based only on pack labels and mediaType.' +
+          (job.nonHood ? ' Pack flags non-hood scope, so the hood rule may not apply.' : ''))));
+      }
+    }
+    var pcnt = job.packCounts;
+    var mism = [];
+    if (pcnt.photos != null && pcnt.photos !== c.photo) mism.push('photos ' + pcnt.photos + ' in pack counts vs ' + c.photo + ' items');
+    if (pcnt.videos != null && pcnt.videos !== c.video) mism.push('videos ' + pcnt.videos + ' in pack counts vs ' + c.video + ' items');
+    if (mism.length) append(ws, h('div', { class: 'banner warn' }, h('span', null, 'Pack count mismatch: ' + mism.join('; ') + '.')));
+    if (job.warnings.length) append(ws, h('div', { class: 'banner info' }, h('span', null, 'Load notes: ' + job.warnings.join(' '))));
+
+    // Pack flags
+    if (job.flags.length) {
+      append(ws, h('div', { class: 'section-gap' }, [
+        h('div', { class: 'panel-title' }, 'Pack flags (as reported by PIX)'),
+        h('ul', { class: 'flag-list' }, job.flags.map(function (f) { return h('li', null, [h('strong', null, f.type), f.note]); }))
+      ]));
+    }
+    // Resolved flags: history only, never active (no TIME CONFLICT chip, no warnings)
+    if (job.resolvedFlags.length) {
+      append(ws, h('div', { class: 'section-gap', id: 'resolvedFlags' }, [
+        h('div', { class: 'panel-title' }, 'Resolved flags (history · not active)'),
+        h('ul', { class: 'flag-list resolved' }, job.resolvedFlags.map(function (f) {
+          return h('li', null, [h('strong', null, 'RESOLVED · ' + f.type), f.note, f.atMs != null ? ' (resolved ' + dtCT(f.atMs) + ')' : '']);
+        }))
+      ]));
+    }
+
+    // Media grid
+    var sorted = job.media.slice().sort(function (a, b) {
+      if (a.tsMs == null || b.tsMs == null) return (a.tsMs == null) - (b.tsMs == null) || a.idx - b.idx;
+      return a.tsMs - b.tsMs || a.idx - b.idx;
+    });
+    append(ws, h('div', { class: 'panel-title section-gap' }, 'Media grid (colored outlines · sorted by capture time)'));
+    append(ws, h('div', { class: 'media-grid', id: 'mediaGrid' }, sorted.length ? sorted.map(function (m) {
+      var tip = [m.caption, m.label, m.techNote ? 'note: ' + m.techNote : '', m.mediaType === 'video' ? 'video (type seen; content unverified)' : m.mediaType].filter(Boolean).join(' · ');
+      return h('div', { class: 'media-tile ' + m.kind, title: tip, 'data-type': m.mediaType }, [
+        h('span', { class: 'img-no' }, 'IMG ' + m.imgNo),
+        m.mediaType === 'video' ? h('span', { class: 'vid-badge' }, 'VID') : (m.mediaType === 'unverified' ? h('span', { class: 'vid-badge unv' }, '?') : null),
+        h('span', { class: 'kind' }, m.kind === 'deficiency' ? 'RED' : m.kind),
+        h('span', { class: 'slot' }, m.label),
+        h('span', { class: 'ts' }, m.tsMs != null ? tCT(m.tsMs) : 'time n/a (' + m.tsRawBad + ')')
+      ]);
+    }) : h('span', { style: 'color:var(--muted);font-size:.8rem' }, 'No media in pack')));
+
+    // Timestamps & intervals
+    var gapRows = gapList.map(function (g) {
+      return h('tr', null, [
+        h('td', null, 'IMG ' + g.from.imgNo + ' → IMG ' + g.to.imgNo),
+        h('td', { class: 'nowrap' }, tCT(g.from.tsMs)),
+        h('td', { class: 'nowrap' }, tCT(g.to.tsMs)),
+        h('td', { class: 'nowrap' + (g.mins >= 40 ? ' hot' : '') }, g.mins + ' min')
+      ]);
+    });
+    append(ws, h('div', { class: 'section-gap' }, [
+      h('div', { class: 'panel-title' }, 'Timestamps & intervals (UTC in pack → shown in CT)'),
+      h('div', { style: 'font-size:.78rem', id: 'captureWindow' }, sp
+        ? ['Capture window: ', h('strong', { class: 'neon-c' }, tCT(sp.first) + ' – ' + tCT(sp.last)), ' · ' + dCT(sp.first) + (dCT(sp.first) !== dCT(sp.last) ? ' → ' + dCT(sp.last) : '') + ' · span ' + sp.mins + ' min']
+        : 'Capture window: n/a (no zoned timestamps)'),
+      h('div', { class: 'table-scroll' }, h('table', { class: 'gap-table' }, [
+        h('thead', null, h('tr', null, [h('th', null, 'Transition'), h('th', null, 'From'), h('th', null, 'To'), h('th', null, 'Gap')])),
+        h('tbody', null, gapRows.length ? gapRows : h('tr', null, h('td', { colspan: '4', style: 'color:var(--muted)' }, 'Need 2+ timed media for gaps')))
+      ])),
+      hotGaps.length ? h('div', { style: 'font-size:.72rem;color:var(--pink)' }, '⚠ ' + hotGaps.length + ' gap(s) ≥ 40 min — flag for next-location ETA / fraud watch') : null,
+      h('div', { style: 'font-size:.72rem;color:var(--muted);margin-top:4px' }, ['Median duration stub (first before → last after): ', h('strong', { class: 'neon-y' }, med != null ? med + ' min' : 'n/a')])
+    ]));
+
+    // Video checks
+    append(ws, h('div', { class: 'section-gap' }, [
+      h('div', { class: 'panel-title' }, 'Video checks (informational · from pack labels + mediaType only)'),
+      h('div', { style: 'font-size:.74rem;color:var(--muted)' },
+        'Items: ' + c.photo + ' photo · ' + c.video + ' video' + (c.unverified ? ' · ' + c.unverified + ' type unverified' : '') +
+        '. Rule: kitchen walkthrough + fan running videos before AND after; fan belt only when the job name starts with DFWA. Content is Lens\u2019s call — never confirmed here.'),
+      h('div', { class: 'table-scroll' }, h('table', { class: 'gap-table', id: 'videoTable' }, [
+        h('thead', null, h('tr', null, [h('th', null, 'Required video'), h('th', null, 'Before'), h('th', null, 'After')])),
+        h('tbody', null, VIDEO_RULES.map(function (r) {
+          var b = videoCell(job, r, 'before'), a = videoCell(job, r, 'after');
+          return h('tr', null, [h('td', null, r.name), h('td', { class: b.cls }, b.text), h('td', { class: a.cls }, a.text)]);
+        }))
+      ])),
+      job.nonHood ? h('div', { style: 'font-size:.72rem;color:var(--yellow)' }, 'Pack flag non_hood_scope: hood video rule may not apply to this job.') : null
+    ]));
+
+    // Publish gate (display only, never actionable)
+    append(ws, h('div', { class: 'gate-panel', id: 'publishGate' }, [
+      h('div', { class: 'panel-title', style: 'margin-bottom:4px' }, 'Publish gate'),
+      h('div', { class: 'gate-state' }, job.deleted ? 'PERMANENTLY OFF — DELETED IN MTP' : 'LOCKED — client publish is never actionable from this page'),
+      h('ul', { class: 'gate-list' }, [
+        h('li', null, (c.before > 0 ? '✓' : '✗') + ' Before media present (' + c.before + ')'),
+        h('li', null, (c.after > 0 ? '✓' : '✗') + ' After media present (' + c.after + ')'),
+        h('li', null, (bc ? '✓' : '✗') + ' Before-complete checkpoint'),
+        h('li', null, 'Pack publishEligible: ' + (job.packPublishEligible ? 'true' : 'false')),
+        h('li', null, 'Criteria met (display only): ' + (criteriaMet(job) ? 'YES' : 'NO'))
+      ])
+    ]));
+
+    // Actions
+    append(ws, h('div', { class: 'actions-row' }, [
+      !job.deleted && job.linkUrl ? h('button', { class: 'btn btn-cyan', type: 'button', 'data-act': 'openMtp' }, 'Open in MyTechPix') : null,
+      !job.deleted ? h('button', { class: 'btn btn-yellow', type: 'button', 'data-act': 'checkpoint', disabled: bc }, 'Mark before-complete checkpoint (local)') : null,
+      h('button', { class: 'btn btn-primary', type: 'button', 'data-act': 'summary' }, 'Generate summary'),
+      h('button', { class: 'btn btn-pink', type: 'button', id: 'btnPublish', disabled: true, title: 'Client publish is locked' }, job.deleted ? 'Publish gate OFF' : 'Publish LOCKED')
+    ]));
+    if (!job.deleted) {
+      append(ws, h('div', { class: 'paste-row' }, [
+        h('input', { type: 'url', id: 'pasteUrl', placeholder: 'Paste an MTP job URL (https) — memory only…', value: o.operatorUrl }),
+        h('button', { class: 'btn btn-ghost', type: 'button', 'data-act': 'attachUrl' }, 'Attach URL'),
+        h('button', { class: 'btn btn-ghost', type: 'button', 'data-act': 'openPasted' }, 'Open pasted')
+      ]));
+    }
+    append(ws, h('div', { class: 'section-gap' }, [
+      h('div', { class: 'panel-title' }, 'Operator notes (memory only — cleared on reload)'),
+      (function () { var t = h('textarea', { class: 'notes-area', id: 'jobNotes', placeholder: 'Stopping-point notes…' }); t.value = o.notes; return t; })()
+    ]));
+    if (job.honesty) append(ws, h('div', { class: 'section-gap', style: 'font-size:.7rem;color:var(--muted)' }, 'Pack honesty line: ' + job.honesty));
+  }
+
+  /* ---------- Summary / evidence export ---------- */
+  function buildSummaryText(job) {
+    var c = counts(job), med = medianDurationStub(job), g = gaps(job), sp = span(job);
+    var maxGap = g.reduce(function (m, x) { return Math.max(m, x.mins); }, 0);
+    var defs = job.media.filter(function (m) { return m.kind === 'deficiency'; });
+    var lines = [
+      '═══════════════════════════════════════',
+      'KEC JOB STOPPING-POINT SUMMARY',
+      'NEXUS FIELD OS · RUNTIME PACK RECORD',
+      '═══════════════════════════════════════'
+    ];
+    if (job.deleted) lines.push('DELETED IN MTP' + (job.deletedMD ? ' ' + job.deletedMD : '') + ' — HISTORY ONLY • NO SCORE', '');
+    lines.push(
+      'Job ID:        ' + job.id,
+      'Type:          ' + job.type,
+      'Location:      ' + job.location,
+      'Date:          ' + job.dateLabel,
+      'Technician:    ' + (job.techHint ? 'SEEN ON MTP, UNCONFIRMED' : 'UNKNOWN'),
+      'MTP link:      ' + (job.deleted ? '(stripped — deleted in MTP)' : (ops(job.id).operatorUrl || job.linkUrl || '(none in pack)')),
+      '',
+      'MEDIA COUNTS',
+      '  Before (blue):      ' + c.before,
+      '  After (green):      ' + c.after,
+      '  Deficiency (red):   ' + c.deficiency,
+      '  Photos / Videos:    ' + c.photo + ' / ' + c.video + (c.unverified ? ' (+' + c.unverified + ' unverified)' : ''),
+      '',
+      'Capture window (CT): ' + (sp ? tCT(sp.first) + ' – ' + tCT(sp.last) + ' (' + sp.mins + ' min)' : 'n/a'),
+      'Legacy time:         ' + (job.legacy ? 'YES — ' + job.legacyWhy : 'no'),
+      'Before-complete checkpoint: ' + (beforeComplete(job) ? 'YES' : 'NO'),
+      'Criteria met (display):     ' + (criteriaMet(job) ? 'YES' : 'NO'),
+      'Publish gate:               ' + (job.deleted ? 'PERMANENTLY OFF' : 'LOCKED (never actionable here)'),
+      '',
+      'Duration (first B → last A): ' + (med != null ? med + ' min' : 'n/a'),
+      'Max interval gap:            ' + (maxGap ? maxGap + ' min' : 'n/a'),
+      '',
+      'VIDEO CHECKS (pack labels + mediaType only; content unverified)'
+    );
+    VIDEO_RULES.forEach(function (r) { lines.push('  ' + r.name + ': before ' + videoCell(job, r, 'before').text + ' | after ' + videoCell(job, r, 'after').text); });
+    lines.push('', 'DEFICIENCIES');
+    if (defs.length) defs.forEach(function (d) { lines.push('  • ' + d.label + ' at ' + tCT(d.tsMs) + (d.techNote ? ' — ' + d.techNote : '')); });
+    else lines.push('  (none)');
+    lines.push('', 'PACK FLAGS');
+    if (job.flags.length) job.flags.forEach(function (f) { lines.push('  • ' + f.type + (f.note ? ' — ' + f.note : '')); });
+    else lines.push('  (none)');
+    job.resolvedFlags.forEach(function (f) { lines.push('  ✓ RESOLVED ' + f.type + (f.note ? ' — ' + f.note : '')); });
+    lines.push('', 'OPERATOR NOTES', ops(job.id).notes || '(none)', '',
+      'This workspace does NOT publish to MyTechPix. Client publish LOCKED.',
+      '═══════════════════════════════════════');
+    return lines.join('\n');
+  }
+  function showSummary(job) {
+    $('modalTitle').textContent = 'Job Summary · ' + job.id + (job.deleted ? ' · HISTORY ONLY' : '');
+    $('modalBody').textContent = buildSummaryText(job);
+    $('modalBg').classList.add('open');
+  }
+  function evidencePack(job) {
+    var c = counts(job), g = gaps(job), sp = span(job);
+    var iso = function (ms) { return ms == null ? null : new Date(ms).toISOString(); };
+    return {
+      schema: 'nexus-qa-brain-evidence-pack-v1',
+      source: 'KEC-FIELD-MONITOR-v2-runtime',
+      demo: false,
+      runtimePack: true,
+      exportedAt: new Date().toISOString(),
+      operator: 'DoubleA',
+      job: { id: job.id, type: job.type, location: job.location, date: job.dateIso, technician: job.techHint ? 'SEEN ON MTP, UNCONFIRMED' : 'UNKNOWN', mtpUrl: job.linkUrl },
+      counts: { before: c.before, after: c.after, deficiency: c.deficiency, photos: c.photo, videos: c.video, unverifiedType: c.unverified, total: job.media.length },
+      timestamps: { first: sp ? iso(sp.first) : null, last: sp ? iso(sp.last) : null, displayZone: TZ, legacy: job.legacy },
+      gapsMinutes: g.map(function (x) { return { from: 'IMG ' + x.from.imgNo, to: 'IMG ' + x.to.imgNo, minutes: x.mins }; }),
+      maxGapMinutes: g.reduce(function (m, x) { return Math.max(m, x.mins); }, 0) || null,
+      medianDurationMinutesStub: medianDurationStub(job),
+      videoChecks: VIDEO_RULES.map(function (r) { return { rule: r.key, before: videoCell(job, r, 'before').text, after: videoCell(job, r, 'after').text }; }),
+      flags: job.flags,
+      resolvedFlags: job.resolvedFlags.map(function (f) { return { type: f.type, note: f.note, resolvedAt: f.atMs != null ? new Date(f.atMs).toISOString() : null }; }),
+      checkpoints: { beforeComplete: beforeComplete(job), criteriaMet: criteriaMet(job), publishGate: 'LOCKED' },
+      notes: ops(job.id).notes || ''
+    };
+  }
+  function exportBrain() {
+    var job = getJob(state.activeTab);
+    if (!job || job.deleted) { toast('Deleted jobs are history only — no score export'); return; }
+    var pack = evidencePack(job);
+    var text = JSON.stringify(pack, null, 2);
+    var blob = new Blob([text], { type: 'application/json' });
+    var a = document.createElement('a');
+    var url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = 'nexus-evidence-' + job.id + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    var pre = $('brainPreview');
+    pre.hidden = false;
+    pre.textContent = text;
+    toast('Evidence pack downloaded for QA Brain');
+  }
+
+  /* ---------- Loading ---------- */
+  function addResult(ok, name, msg) {
+    state.results.unshift({ ok: ok, name: P(name, 120) || '(unnamed)', msg: msg });
+    state.results = state.results.slice(0, 30);
+    renderResults();
+  }
+  function renderResults() {
+    var ul = $('loadResults');
+    clear(ul);
+    state.results.forEach(function (r) {
+      append(ul, h('li', { class: r.ok ? 'ok' : 'err' }, [
+        (r.ok ? '✓ ' : '✗ ') + r.name,
+        h('span', { class: 'rmsg' }, r.msg)
+      ]));
+    });
+  }
+  function mergeRows(rows) {
+    rows.forEach(function (r) {
+      var cur = state.listRows[r.id];
+      var newer = !cur || (r.srcCapturedMs || 0) >= (cur.srcCapturedMs || 0);
+      if (newer) state.listRows[r.id] = r;
+    });
+  }
+  function ingest(text, name) {
+    var raw;
+    try { raw = JSON.parse(text); }
+    catch (e) { addResult(false, name, 'Invalid JSON — file could not be parsed.'); return null; }
+    var n;
+    try { n = normalizePack(raw, name); }
+    catch (e) { addResult(false, name, 'Rejected: ' + P(e && e.message ? e.message : 'invalid pack shape', 200)); return null; }
+    if (n.kind === 'list') {
+      mergeRows(n.rows);
+      addResult(true, name, 'Unpublished list: ' + n.rows.length + ' row(s) loaded.');
+      return null;
+    }
+    var job = n.job;
+    var existing = -1;
+    state.jobs.forEach(function (j, i) { if (j.id === job.id) existing = i; });
+    if (existing >= 0) state.jobs[existing] = job; else state.jobs.push(job);
+    if (job.deleted) {
+      Object.keys(state.listRows).forEach(function (k) { if (state.listRows[k].srcId === job.id) delete state.listRows[k]; });
+      if (n.historyListHidden) state.hiddenHistoryLists[job.id] = true; else delete state.hiddenHistoryLists[job.id];
+    } else {
+      delete state.hiddenHistoryLists[job.id];
+    }
+    mergeRows(n.rows);
+    var c = counts(job);
+    addResult(true, name, 'Job ' + job.id + (job.deleted ? ' (DELETED IN MTP — history only' + (n.historyListHidden ? '; its queue list is hidden' : '') + ')' : '') + ': ' + job.media.length + ' item(s) · ' + c.photo + ' photo / ' + c.video + ' video' +
+      (existing >= 0 ? ' · replaced earlier load' : '') + (n.warnings.length ? ' · ' + n.warnings.length + ' note(s)' : ''));
+    return job;
+  }
+  function afterLoad(loaded) {
+    if (loaded.length) {
+      loaded.forEach(function (j) { if (state.openTabs.indexOf(j.id) < 0) state.openTabs.push(j.id); });
+      var pick = loaded.filter(function (j) { return !j.deleted; })[0] || loaded[0];
+      state.activeTab = pick.id;
+      setLoop([h('span', { class: 'neon-g' }, 'PACKS LOADED'), ' — start from top of unpublished KEC'], 20);
+    }
+    renderAll();
+  }
+  function readFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList || []);
+    if (!files.length) return;
+    var loaded = [];
+    var chain = Promise.resolve();
+    files.forEach(function (f) {
+      chain = chain.then(function () {
+        if (!/\.json$/i.test(f.name) && f.type !== 'application/json') { addResult(false, f.name, 'Rejected: not a .json file.'); return; }
+        if (f.size > MAX_FILE_BYTES) { addResult(false, f.name, 'Rejected: larger than 5 MB.'); return; }
+        return f.text().then(function (t) { var j = ingest(t, f.name); if (j) loaded.push(j); },
+          function () { addResult(false, f.name, 'Could not read file.'); });
+      });
+    });
+    chain.then(function () { afterLoad(loaded); toast(loaded.length ? loaded.length + ' pack(s) loaded' : 'No job packs loaded'); });
+  }
+  function pickFiles() { var fi = $('fileInput'); fi.value = ''; fi.click(); }
+
+  function checkPackUrl(u) {
+    var proto = location.protocol;
+    if (proto !== 'http:' && proto !== 'https:') return { ok: false, msg: 'Rejected: ?packs needs this page served over http(s). Use the file picker on file://.' };
+    if (u.indexOf('\\') >= 0) return { ok: false, msg: 'Rejected: backslashes not allowed.' };
+    var abs;
+    try { abs = new URL(u, location.href); } catch (e) { return { ok: false, msg: 'Rejected: not a valid URL.' }; }
+    if (abs.origin !== location.origin) return { ok: false, msg: 'Rejected: not same-origin (only relative or same-origin URLs allowed).' };
+    if (!/\.json$/i.test(abs.pathname)) return { ok: false, msg: 'Rejected: must point to a .json file.' };
+    return { ok: true, url: abs.href };
+  }
+  function fetchPacks(urls) {
+    var loaded = [];
+    var chain = Promise.resolve();
+    urls.forEach(function (u) {
+      chain = chain.then(function () {
+        var chk = checkPackUrl(u);
+        if (!chk.ok) { addResult(false, u, chk.msg); return; }
+        return fetch(chk.url, { credentials: 'same-origin', cache: 'no-store', redirect: 'error' }).then(function (res) {
+          if (!res.ok) { addResult(false, u, 'Fetch failed: HTTP ' + res.status + '.'); return; }
+          if (new URL(res.url || chk.url).origin !== location.origin) { addResult(false, u, 'Rejected: response not same-origin.'); return; }
+          var len = parseInt(res.headers.get('content-length') || '0', 10);
+          if (len > MAX_FILE_BYTES) { addResult(false, u, 'Rejected: larger than 5 MB.'); return; }
+          return res.text().then(function (t) {
+            if (t.length > MAX_FILE_BYTES) { addResult(false, u, 'Rejected: larger than 5 MB.'); return; }
+            var name = decodeURIComponent(new URL(chk.url).pathname.split('/').pop() || u);
+            var j = ingest(t, name); if (j) loaded.push(j);
+          });
+        }).catch(function () { addResult(false, u, 'Fetch failed (network or redirect).'); });
+      });
+    });
+    return chain.then(function () { afterLoad(loaded); return loaded; });
+  }
+  function bootQueryPacks() {
+    var v = null;
+    try { v = new URLSearchParams(location.search || '').get('packs'); } catch (e) { v = null; }
+    if (!v) return;
+    state.queryUrls = v.split(',').map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 20);
+    if (state.queryUrls.length) fetchPacks(state.queryUrls);
+  }
+
+  function resetAll() {
+    state.jobs = []; state.listRows = {}; state.openTabs = []; state.activeTab = null;
+    state.page = 1; state.refreshCount = 0; state.results = []; state.ops = {}; state.hiddenHistoryLists = {};
+    $('fileInput').value = '';
+    $('brainPreview').hidden = true;
+    $('brainPreview').textContent = '';
+    setLoop('IDLE — no pack loaded', 0);
+    renderResults();
+    renderAll();
+    toast('Cleared — nothing was stored');
+  }
+  function refreshQueue() {
+    state.refreshCount++;
+    if (state.queryUrls.length) {
+      setLoop([h('span', { class: 'neon-c' }, 'REFRESH #' + state.refreshCount), ' — re-fetching same-origin packs'], 15 + state.refreshCount * 8);
+      fetchPacks(state.queryUrls).then(function () { toast('Packs re-fetched'); });
+      return;
+    }
+    // Never simulate media: without a pack source, refresh only re-renders.
+    setLoop([h('span', { class: 'neon-c' }, 'REFRESH #' + state.refreshCount), ' — scroll end → start top (re-load pack files for new data)'], 15 + state.refreshCount * 8);
+    renderAll();
+    toast(state.jobs.length ? 'Queue re-rendered — load newer packs to update' : 'No pack loaded');
+  }
+
+  function renderAll() {
+    renderHeaderChips();
+    renderQueue();
+    renderTabs();
+    renderWorkspace();
+  }
+
+  /* ---------- Wiring (event delegation, no inline handlers) ---------- */
+  $('btnLoadPacks').addEventListener('click', pickFiles);
+  $('btnLoadPacks2').addEventListener('click', pickFiles);
+  $('fileInput').addEventListener('change', function (e) { readFiles(e.target.files); });
+  $('btnReset').addEventListener('click', resetAll);
+  $('btnRefresh').addEventListener('click', refreshQueue);
+  $('btnPage1').addEventListener('click', function () { state.page = 1; renderAll(); });
+  $('btnPage2').addEventListener('click', function () { state.page = 2; renderAll(); });
+  $('btnAllTypes').addEventListener('click', function () { state.showAllTypes = !state.showAllTypes; renderAll(); });
+  $('btnExportBrain').addEventListener('click', exportBrain);
+
+  $('queueList').addEventListener('click', function (e) {
+    if (e.target.closest('[data-stop]')) return;
+    var card = e.target.closest('.job-card');
+    if (!card) return;
+    if (card.dataset.id) openJob(card.dataset.id);
+    else if (card.dataset.row) toast('List row only — load its PIX-LIVE-PACK json to open it');
+  });
+  $('queueList').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var card = e.target.closest('.job-card');
+    if (card && card.dataset.id) { e.preventDefault(); openJob(card.dataset.id); }
+  });
+  $('tabsStrip').addEventListener('click', function (e) {
+    var close = e.target.closest('[data-close]');
+    if (close) { e.stopPropagation(); closeTab(close.dataset.close); return; }
+    var t = e.target.closest('.tab');
+    if (t) { state.activeTab = t.dataset.tab; renderAll(); }
+  });
+  $('jobWorkspace').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (!b) return;
+    var job = getJob(state.activeTab);
+    if (!job) return;
+    var o = ops(job.id), act = b.dataset.act;
+    if (act === 'summary') { showSummary(job); return; }
+    if (job.deleted) return;                                    // no actions on deleted jobs
+    if (act === 'checkpoint') { o.beforeMark = true; toast('Before-complete checkpoint marked (this session only)'); renderAll(); }
+    else if (act === 'openMtp' && job.linkUrl) { window.open(job.linkUrl, '_blank', 'noopener,noreferrer'); toast('Opening MTP (login required)'); }
+    else if (act === 'attachUrl') {
+      var v = ($('pasteUrl').value || '').trim();
+      if (v && !/^https:\/\//i.test(v)) { toast('Only https URLs'); return; }
+      o.operatorUrl = v;
+      toast(v ? 'URL attached (memory only)' : 'Cleared pasted URL');
+    } else if (act === 'openPasted') {
+      var u = (($('pasteUrl').value || '') || o.operatorUrl).trim();
+      if (!u) { toast('Paste an MTP URL first'); return; }
+      if (!/^https:\/\//i.test(u)) { toast('Only https URLs'); return; }
+      window.open(u, '_blank', 'noopener,noreferrer');
+    }
+  });
+  $('jobWorkspace').addEventListener('input', function (e) {
+    if (e.target.id !== 'jobNotes') return;
+    var job = getJob(state.activeTab);
+    if (job) ops(job.id).notes = e.target.value;
+  });
+  $('modalClose').addEventListener('click', function () { $('modalBg').classList.remove('open'); });
+  $('modalBg').addEventListener('click', function (e) { if (e.target.id === 'modalBg') $('modalBg').classList.remove('open'); });
+  $('modalCopy').addEventListener('click', function () {
+    var t = $('modalBody').textContent;
+    if (!navigator.clipboard) { toast('Copy not available'); return; }
+    navigator.clipboard.writeText(t).then(function () { toast('Copied'); }, function () { toast('Copy failed'); });
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') $('modalBg').classList.remove('open'); });
+
+  // Drag-and-drop anywhere on the page
+  var dragDepth = 0;
+  function hasFiles(e) { return e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') >= 0; }
+  document.addEventListener('dragenter', function (e) { if (!hasFiles(e)) return; e.preventDefault(); dragDepth++; document.body.classList.add('dragging'); });
+  document.addEventListener('dragover', function (e) { if (!hasFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+  document.addEventListener('dragleave', function (e) { if (!hasFiles(e)) return; dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) document.body.classList.remove('dragging'); });
+  document.addEventListener('drop', function (e) {
+    if (!hasFiles(e)) return;
+    e.preventDefault(); dragDepth = 0; document.body.classList.remove('dragging');
+    readFiles(e.dataTransfer.files);
+  });
+
+  // v1 cached its embedded job feed + queue under these two keys. v2 only removes them; it never writes storage.
+  var V1_STORAGE_KEYS = ['nexus-kec-field-monitor-v1', 'nexus-kec-live'];
+  function clearV1Keys() {
+    var removed = 0;
+    try {
+      var ls = window.localStorage;
+      V1_STORAGE_KEYS.forEach(function (k) { if (ls.getItem(k) !== null) { ls.removeItem(k); removed++; } });
+    } catch (e) { /* storage unavailable (privacy mode / sandbox): nothing to clear */ }
+    return removed;
+  }
+
+  // Boot: empty. Clear v1 keys only. Only ?packs= (same-origin) may load data automatically. v2 stores nothing.
+  var v1Removed = clearV1Keys();
+  if (v1Removed) addResult(true, 'Legacy v1 cache', 'Removed ' + v1Removed + ' v1 storage key(s). Nothing was stored by v2.');
+  renderResults();
+  renderAll();
+  bootQueryPacks();
+})();
+</script>
+</body>
+</html>
